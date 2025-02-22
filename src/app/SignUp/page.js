@@ -11,7 +11,7 @@ import { registerUserFace } from "@/lib/firebase";
 import { detectFace, loadModel, startCamera } from "@/lib/faceRecognition";
 import { BiLogIn } from "react-icons/bi";
 
-export default function Page() {
+export default function SignUp() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const videoRef = useRef(null);
@@ -123,11 +123,11 @@ export default function Page() {
 
         <div className="flex-1 bg-indigo-100 flex">
           <div className="m-12 xl:m-16">
-            {error && (
-              <p className="bg-red-500 text-white font-roboto font-bold px-2 py-2 mb-5 rounded-2xl md:w-1/2 w-full">
-                {error}
-              </p>
-            )}
+                    {error && (
+            <p className="bg-red-500 text-white font-roboto font-bold px-2 py-2 mb-3 rounded-2xl md:w-1/2 w-full">
+              {error}
+            </p>
+          )}
             <video
               ref={videoRef}
               autoPlay

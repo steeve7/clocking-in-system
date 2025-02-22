@@ -20,7 +20,7 @@ export default function Page() {
     // Check if user is authenticated
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (!user) {
-        router.replace("/login"); // Redirect if not logged in
+        router.replace("/Login"); // Redirect if not logged in
       } else {
         setLoading(false);
       }
@@ -32,7 +32,7 @@ export default function Page() {
 const handleLogout = async () => {
   try {
     await signOut(auth);
-    router.replace("/login"); // Redirect to login after logout
+    router.replace("/Login"); // Redirect to login after logout
   } catch (error) {
     setError("Logout Error!", + error.message);
   }

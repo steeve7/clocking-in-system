@@ -9,7 +9,7 @@ import { getUserFaceData } from "@/lib/firebase"; // Function to fetch stored fa
 import {BiLogIn} from 'react-icons/bi'
 import Link from "next/link";
 
-export default function Page() {
+export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");

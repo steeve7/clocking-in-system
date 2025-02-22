@@ -12,14 +12,14 @@ export default function Hero() {
         <div className="flex flex-row justify-center items-center gap-4">
           <div className="flex flex-row items-center gap-2 border bg-white border-white text-blue-900 rounded-xl px-2 py-2 hover:transition ease-in-out">
             <FaUser />
-            <Link href={"/login"} className="font-roboto font-bold text-[20px]">
+            <Link href={"/Login"} className="font-roboto font-bold text-[20px]">
               Sign-In
             </Link>
           </div>
-          <div className="flex flex-row items-center gap-2 border border-white bg-transparent rounded-xl px-2 py-2 hover:transition ease-in-out">
+          <div className="flex flex-row items-center gap-2 border border-white bg-transparent rounded-xl px-2 py-2  hover:transition ease-in-out">
             <FaUser />
             <Link
-              href={"/signUp"}
+              href={"/SignUp"}
               className="font-roboto font-bold text-[20px]"
             >
               Sign-Up
