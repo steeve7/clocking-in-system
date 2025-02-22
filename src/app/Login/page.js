@@ -13,7 +13,6 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
   const videoRef = useRef(null);
   const streamRef = useRef(null); // Store camera stream
   const router = useRouter();
@@ -43,7 +42,7 @@ export default function Login() {
           streamRef.current = stream; // Save the stream to stop it later if needed
         }
       } catch (error) {
-        setError("Error accessing camera...", +error.message);
+        setError("Error accessing camera...", + error.message);
       }
     }
 
@@ -58,17 +57,14 @@ export default function Login() {
 
  const handleLogin = async (e) => {
    e.preventDefault();
-   setLoading(true);
-   setError("");
+   setError("Look at the camera...");
 
    try {
-     setError("Look at the camera...");
 
      // Detect face from video
      const detectedFace = await detectFace(videoRef.current);
      if (!detectedFace) {
        setError("Face not detected! Try again.");
-       setLoading(false);
        return;
      }
 
@@ -84,7 +80,6 @@ export default function Login() {
      const storedFace = await getUserFaceData(user.uid);
      if (!storedFace) {
        setError("No face data found. Please register your face first.");
-       setLoading(false);
        return;
      }
 
@@ -92,7 +87,6 @@ export default function Login() {
      const isMatch = compareFaces(detectedFace, storedFace);
      if (!isMatch) {
        setError("Face does not match. Access denied!");
-       setLoading(false);
        return;
      }
 
@@ -110,11 +104,10 @@ export default function Login() {
      // Redirect to Dashboard
      setTimeout(() => {
        router.push("/Dashboard");
-     }, 600);
+     }, 1000);
    } catch (error) {
      setError(error.message);
    }
-   setLoading(false);
  };
 
 
@@ -123,7 +116,7 @@ export default function Login() {
       <div className="max-w-screen-xl m-0 sm:m-10 bg-white shadow sm:rounded-lg flex lg:flex-row flex-col justify-center flex-1">
         <div className="lg:w-1/2 xl:w-5/12 p-6 sm:p-12">
           <div className="mt-12 flex flex-col items-center">
-            <h1 className="text-2xl xl:text-3xl font-bold text-center font-roboto">
+            <h1 className="text-2xl xl:text-3xl font-bold text-center font-roboto px-10">
               Sign-in with Face Recognition
             </h1>
             <div className="w-full flex-1 mt-8">
@@ -155,17 +148,12 @@ export default function Login() {
                   OR
                 </p>
                 <Link
-                  href={"/SignUp"}
+                  href={"/signUp"}
                   className="mt-5 tracking-wide font-semibold bg-orange-500 text-gray-100 w-full py-4 rounded-lg hover:bg-orange-700 transition-all duration-300 ease-in-out flex flex-row gap-2 items-center justify-center focus:shadow-outline focus:outline-none"
                 >
                   <BiLogIn />
                   Sign-Up
                 </Link>
-                {loading && (
-                  <p className="bg-orange-500 text-white font-roboto font-bold px-2 py-2 mt-5 rounded-2xl w-1/2 flex justify-center items-center">
-                    Loading...
-                  </p>
-                )}
               </form>
             </div>
           </div>
@@ -174,11 +162,11 @@ export default function Login() {
         {/* Show video feed only if client-side */}
         <div className="flex-1 bg-indigo-100 flex">
           <div className="m-12 xl:m-16 w-full">
-            {error && (
-              <p className="bg-red-500 text-white font-roboto font-bold px-2 py-2 mb-3 rounded-2xl md:w-1/2 w-full">
-                {error}
-              </p>
-            )}
+          {error && (
+            <p className="bg-red-500 text-white font-roboto font-bold px-2 py-2 mb-3 rounded-2xl md:w-1/2 w-full">
+              {error}
+            </p>
+          )}
             <video
               ref={videoRef}
               autoPlay

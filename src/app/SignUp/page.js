@@ -17,7 +17,6 @@ export default function SignUp() {
   const videoRef = useRef(null);
   const router = useRouter();
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
 
   // Redirect already logged-in users to /Dashboard
   useEffect(() => {
@@ -38,12 +37,10 @@ export default function SignUp() {
 
   const handleSignUp = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError("");
+    setError("Look at the camera...");
 
     try {
-      setError("Look at the camera...");
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 600));
 
       if (!videoRef.current || !videoRef.current.srcObject) {
         setError("Camera is not active. Please allow access and try again.");
@@ -75,12 +72,15 @@ export default function SignUp() {
       }
       setEmail("");
       setPassword("");
-      
-      router.push("/Dashboard");
+
+      // Redirect to Dashboard
+      setTimeout(() => {
+        router.push("/Dashboard");
+      }, 1000);
+
     } catch (error) {
       setError(error.message);
     }
-      setLoading(false);
   };
 
   return (
@@ -88,7 +88,7 @@ export default function SignUp() {
       <div className="max-w-screen-xl m-0 sm:m-10 bg-white shadow sm:rounded-lg flex lg:flex-row flex-col justify-center flex-1">
         <div className="lg:w-1/2 xl:w-5/12 p-6 sm:p-12">
           <div className="mt-12 flex flex-col items-center">
-            <h1 className="text-2xl xl:text-3xl font-bold text-center font-roboto">
+            <h1 className="text-2xl xl:text-3xl font-bold text-center font-roboto px-10">
               Sign-Up with Face Recognition
             </h1>
             <div className="w-full flex-1 mt-8">
@@ -116,11 +116,6 @@ export default function SignUp() {
                   <BiLogIn />
                   Sign-Up
                 </button>
-                {loading && (
-                  <p className="bg-orange-500 text-white font-roboto font-bold mt-5 px-2 py-2 rounded-2xl w-/2 flex justify-center items-center">
-                    Loading...
-                  </p>
-                )}
               </form>
             </div>
           </div>

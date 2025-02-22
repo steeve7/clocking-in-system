@@ -6,21 +6,35 @@ import { FaUserEdit } from "react-icons/fa";
 import { LuSearch } from "react-icons/lu";
 import Attendance from "../Dashboard/Attendance/page";
 import { useRouter } from "next/navigation";
-import { signOut } from "firebase/auth";
+import { signOut, onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 
 
 export default function Page() {
   const [selectedMenu, setSelectedMenu] = useState("Dashboard");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
+
+  useEffect(() => {
+    // Check if user is authenticated
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        router.replace("/login"); // Redirect if not logged in
+      } else {
+        setLoading(false);
+      }
+    });
+
+    return () => unsubscribe(); // Cleanup function
+  }, [router]);
 
 const handleLogout = async () => {
   try {
     await signOut(auth);
-    router.replace("/Login"); // Redirect to login after logout
+    router.replace("/login"); // Redirect to login after logout
   } catch (error) {
-    console.error("Logout Error:", error);
+    setError("Logout Error!", + error.message);
   }
 };
 
@@ -39,14 +53,22 @@ const handleLogout = async () => {
     setIsSidebarOpen(false); // Close the sidebar on menu click
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        Loading...
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-row h-screen">
       {/* Sidebar */}
       <div
-        className={`w-full md:w-[20rem] bg-white text-black p-4 md:h-full transition-transform duration-700 ease-in-out ${
+        className={`w-full md:w-[20rem] bg-white text-black p-4 md:h-full absolute left-0 z-10 md:relative md:translate-x-0 transition-transform duration-1000 ease-[cubic-bezier(0.4, 0, 0.2, 1)] ${
           isSidebarOpen
-            ? "transform translate-x-0"
-            : "transform -translate-x-full md:translate-x-0 "
+            ? "translate-x-0"
+            : "-translate-x-full md:translate-x-0 "
         } absolute left-0 z-10 md:relative md:translate-x-0`}
       >
         <div className="flex gap-2 items-center pl-4">
@@ -66,40 +88,44 @@ const handleLogout = async () => {
         >
           {/* Dashboard menu */}
           <div className="mt-6 space-y-2">
-            {[{ name: "Attendance", icon: <FaUserEdit size={20}/>  }].map((menu) => (
-              <div
-                key={menu.name}
-                onClick={() => handleMenuClick(menu.name)}
-                className={`flex items-center justify-start gap-2 p-2 pl-4 cursor-pointer rounded-md ${
-                  selectedMenu === menu.name ? "bg-black text-white" : ""
-                }`}
-              >
-                <div className="flex items-center gap-2 flex-1">
-                  <p
-                    style={{
-                      filter:
-                        selectedMenu === menu.name
-                          ? "brightness(0) invert(1)"
-                          : "none",
-                    }}
-                  >{menu.icon}</p>
-                  <p className="font-roboto font-medium">{menu.name}</p>
-                </div>
-                <RiArrowDropRightLine
-                  size={30}
-                  className={`${
-                    selectedMenu === menu.name ? "text-white" : "text-black"
+            {[{ name: "Attendance", icon: <FaUserEdit size={20} /> }].map(
+              (menu) => (
+                <div
+                  key={menu.name}
+                  onClick={() => handleMenuClick(menu.name)}
+                  className={`flex items-center justify-start gap-2 p-2 pl-4 cursor-pointer rounded-md ${
+                    selectedMenu === menu.name ? "bg-black text-white" : ""
                   }`}
-                />
-              </div>
-            ))}
+                >
+                  <div className="flex items-center gap-2 flex-1">
+                    <p
+                      style={{
+                        filter:
+                          selectedMenu === menu.name
+                            ? "brightness(0) invert(1)"
+                            : "none",
+                      }}
+                    >
+                      {menu.icon}
+                    </p>
+                    <p className="font-roboto font-medium">{menu.name}</p>
+                  </div>
+                  <RiArrowDropRightLine
+                    size={30}
+                    className={`${
+                      selectedMenu === menu.name ? "text-white" : "text-black"
+                    }`}
+                  />
+                </div>
+              )
+            )}
           </div>
 
           {/* Profile menu */}
           <div className="mt-8">
             <div className="flex items-center justify-center cursor-pointer rounded-md">
               <button
-               onClick={handleLogout}
+                onClick={handleLogout}
                 className="bg-black text-white px-4 py-2 rounded-md hover:bg-red-700 transition w-full"
               >
                 Logout
