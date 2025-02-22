@@ -9,7 +9,7 @@ import { getUserFaceData } from "@/lib/firebase"; // Function to fetch stored fa
 import {BiLogIn} from 'react-icons/bi'
 import Link from "next/link";
 
-export default function Login() {
+export default function Page() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -144,15 +144,15 @@ export default function Login() {
                   <BiLogIn />
                   Sign-In
                 </button>
-                <p className="flex justify-center items-center font-roboto font-medium mt-5">
-                  OR
-                </p>
+                <div className="flex lg:flex-row flex-col justify-start items-center gap-2 mt-5">
+                  <p>Don't have an account?</p>
+                </div>
                 <Link
                   href={"/signUp"}
-                  className="mt-5 tracking-wide font-semibold bg-orange-500 text-gray-100 w-full py-4 rounded-lg hover:bg-orange-700 transition-all duration-300 ease-in-out flex flex-row gap-2 items-center justify-center focus:shadow-outline focus:outline-none"
+                  className="mt-5 tracking-wide font-semibold text-blue-200 w-full transition-all duration-300 ease-in-out"
                 >
-                  <BiLogIn />
-                  Sign-Up
+                  
+                  Get started
                 </Link>
               </form>
             </div>

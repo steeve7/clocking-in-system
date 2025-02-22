@@ -11,7 +11,7 @@ import { registerUserFace } from "@/lib/firebase";
 import { detectFace, loadModel, startCamera } from "@/lib/faceRecognition";
 import { BiLogIn } from "react-icons/bi";
 
-export default function SignUp() {
+export default function Page() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const videoRef = useRef(null);
