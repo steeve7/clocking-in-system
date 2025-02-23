@@ -144,7 +144,7 @@ export default function Login() {
                   <BiLogIn />
                   Sign-In
                 </button>
-                <div className="flex flex-col justify-center items-center gap-2 mt-5 w-full">
+                <div className="flex flex-col justify-center items-center mt-5 w-full">
                   <p>Don't have an account?</p>
                   <Link
                   href={"/SignUp"}
