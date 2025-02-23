@@ -32,6 +32,8 @@ export default function SignUp() {
     if (videoRef.current) {
       loadModel();
       startCamera(videoRef.current);
+    }else{
+      setError("Error accessing camera...")
     }
   }, []);
 
