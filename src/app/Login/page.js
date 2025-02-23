@@ -144,11 +144,11 @@ export default function Login() {
                   <BiLogIn />
                   Sign-In
                 </button>
-                <div className="flex flex-row justify-center items-center gap-2 mt-5">
+                <div className="flex flex-col justify-center items-center gap-2 mt-5 w-full">
                   <p>Don't have an account?</p>
                   <Link
                   href={"/SignUp"}
-                  className="mt-5 tracking-wide font-semibold text-blue-200 w-full transition-all duration-300 ease-in-out"
+                  className="mt-5 tracking-wide font-semibold text-blue-200 transition-all duration-300 ease-in-out"
                 >
                   
                   Get started
