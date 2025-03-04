@@ -6,6 +6,8 @@ import { collection, getDocs, setDoc, doc } from "firebase/firestore";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { BiLogIn } from "react-icons/bi";
 import { useRouter } from "next/navigation";
+import emailjs from "@emailjs/browser";
+
 
 export default function SignUp() {
   const [userData, setUserData] = useState({
@@ -23,6 +25,7 @@ export default function SignUp() {
   const modelsLoaded = useRef(false);
   const detectionInterval = useRef(null);
   const router = useRouter();
+  emailjs.init("abh7mLjaQox8Fuece");
 
   useEffect(() => {
     loadModels();
@@ -217,6 +220,28 @@ const handleSignup = async (e) => {
 
     console.log("User successfully stored!");
     setSuccessMessage("Signup successful!");
+
+    // Send Email Notification**
+   const templateParams = {
+  to_email: userData.email.trim(), //  Send email to the user who signed up
+  name: userData.name,
+  role: userData.role,
+  signupDate: new Date().toISOString().split("T")[0],
+};
+
+emailjs.send(
+  "service_sm5r8fj",  // Your actual Service ID
+  "template_x1l88yh", // Your actual Template ID
+  templateParams,     // Pass the correct object here
+  "abh7mLjaQox8Fuece"   // Your Public Key
+)
+.then((response) => {
+  console.log("✅ Email sent successfully to:", userData.email);
+})
+.catch((error) => {
+  console.error("❌ Error sending email:", error);
+});
+
 
     // Clear input fields
     setUserData({
