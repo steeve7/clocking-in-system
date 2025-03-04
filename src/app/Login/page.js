@@ -1,114 +1,135 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { signInWithEmailAndPassword, onAuthStateChanged } from "firebase/auth";
-import { useRouter } from "next/navigation"; // Import useRouter for redirection
-import { auth } from "@/lib/firebase";
-import { detectFace, loadModel, compareFaces } from "@/lib/faceRecognition";
-import { getUserFaceData } from "@/lib/firebase"; // Function to fetch stored face data
-import {BiLogIn} from 'react-icons/bi'
+import { useRouter } from "next/navigation";
+import * as faceapi from "face-api.js";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth, db } from "@/lib/firebase";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { BiLogIn } from "react-icons/bi";
 import Link from "next/link";
 
 export default function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const videoRef = useRef(null);
-  const streamRef = useRef(null); // Store camera stream
-  const router = useRouter();
+const router = useRouter();
+const [email, setEmail] = useState("");
+const [password, setPassword] = useState("");
+const [loading, setLoading] = useState(false);
+const [error, setError] = useState("");
+const [successMessage, setSuccessMessage] = useState("");
+const videoRef = useRef(null);
 
-  // Redirect if user is already logged in
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        router.replace("/Dashboard");
-      }
-    });
-
-    return () => unsubscribe(); // Cleanup listener on unmount
-  }, [router]);
-  
-  useEffect(() => {
-    async function setupCamera() {
-      try {
-        await loadModel(); // Ensure model is loaded first
-
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: true,
-        });
-
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          streamRef.current = stream; // Save the stream to stop it later if needed
-        }
-      } catch (error) {
-        setError("Error accessing camera...", + error.message);
-      }
+useEffect(() => {
+  startCamera();
+  // Redirect to dashboard if already logged in
+  const unsubscribe = auth.onAuthStateChanged((user) => {
+    if (user) {
+      router.push("/dashboard");
     }
+  });
+  return () => unsubscribe();
+}, [router]);
 
-    setupCamera();
+async function loadModels() {
+  await Promise.all([
+    faceapi.nets.tinyFaceDetector.loadFromUri("/models"),
+    faceapi.nets.faceLandmark68Net.loadFromUri("/models"),
+    faceapi.nets.faceRecognitionNet.loadFromUri("/models"),
+  ]);
+}
 
-    return () => {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop());
-      }
-    };
-  }, []);
+// async function startCamera() {
+//   try {
+//     const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+//     if (videoRef.current) {
+//       videoRef.current.srcObject = stream;
+//     }
+//   } catch (error) {
+//     setError("Camera access denied. Please grant permission.");
+//   }
+// }
 
- const handleLogin = async (e) => {
-   e.preventDefault();
-   setError("Look at the camera...");
-
+ const startCamera = async () => {
+   if (videoRef.current?.srcObject) return; // Avoid re-starting
    try {
-
-     // Detect face from video
-     const detectedFace = await detectFace(videoRef.current);
-     if (!detectedFace) {
-       setError("Face not detected! Try again.");
-       return;
-     }
-
-     // Log in user first before accessing `user.uid`
-     const userCredential = await signInWithEmailAndPassword(
-       auth,
-       email,
-       password
-     );
-     const user = userCredential.user; // Now user is defined
-
-     // Now it's safe to get stored face data
-     const storedFace = await getUserFaceData(user.uid);
-     if (!storedFace) {
-       setError("No face data found. Please register your face first.");
-       return;
-     }
-
-     // Compare detected face with stored face
-     const isMatch = compareFaces(detectedFace, storedFace);
-     if (!isMatch) {
-       setError("Face does not match. Access denied!");
-       return;
-     }
-
-     setError("Login successful! Face matched.");
-
-     // Stop the camera before redirecting
-     if (streamRef.current) {
-       streamRef.current.getTracks().forEach((track) => track.stop());
-     }
-
-     // Clear input fields
-     setEmail("");
-     setPassword("");
-
-     // Redirect to Dashboard
-     setTimeout(() => {
-       router.push("/Dashboard");
-     }, 1000);
+     const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+     videoRef.current.srcObject = stream;
    } catch (error) {
-     setError(error.message);
+     setError("Error accessing camera. Please grant permission.");
+     console.error("Camera access error:", error);
    }
  };
+
+function stopCamera() {
+  if (videoRef.current?.srcObject) {
+    videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
+    videoRef.current.srcObject = null;
+  }
+}
+
+async function handleFaceLogin() {
+  setError("");
+  setLoading(true);
+
+  if (!videoRef.current) {
+    setError("No video feed detected.");
+    setLoading(false);
+    return;
+  }
+
+  await loadModels();
+
+  // Detect face from camera feed
+  const faceDetections = await faceapi
+    .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
+    .withFaceLandmarks()
+    .withFaceDescriptor();
+
+  if (!faceDetections) {
+    setError("No face detected. Try again.");
+    stopCamera();
+    setLoading(false);
+    return;
+  }
+
+  // Fetch user details from Firestore
+  const userQuery = query(collection(db, "users"), where("email", "==", email));
+  const querySnapshot = await getDocs(userQuery);
+
+  if (querySnapshot.empty) {
+    setError("User not found. Please sign up.");
+    stopCamera();
+    setLoading(false);
+    return;
+  }
+
+  const userData = querySnapshot.docs[0].data();
+  const storedFaceDescriptor = new Float32Array(userData.faceDescriptor);
+
+  // Compare detected face with stored face
+  const distance = faceapi.euclideanDistance(
+    faceDetections.descriptor,
+    storedFaceDescriptor
+  );
+
+  if (distance > 0.6) {
+    setError("Face does not match. Access denied.");
+    stopCamera();
+    setLoading(false);
+    return;
+  }
+
+  // Authenticate with Firebase
+  try {
+    await signInWithEmailAndPassword(auth, email.trim(), password);
+    setSuccessMessage("Sign-in Successfully!")
+    stopCamera();
+    router.push("/Dashboard");
+  } catch (err) {
+    setError("Invalid email or password.");
+  }
+
+  setLoading(false);
+}
 
 
   return (
@@ -120,7 +141,7 @@ export default function Login() {
               Sign-in with Face Recognition
             </h1>
             <div className="w-full flex-1 mt-8">
-              <form className="mx-auto max-w-xs" onSubmit={handleLogin}>
+              <div className="mx-auto max-w-xs">
                 <input
                   className="w-full px-8 py-4 rounded-lg font-medium bg-gray-100 border border-gray-200 placeholder-gray-500 text-sm focus:outline-none focus:border-gray-400 focus:bg-white"
                   type="email"
@@ -137,25 +158,26 @@ export default function Login() {
                   placeholder="Password"
                   required
                 />
+
                 <button
                   type="submit"
+                  onClick={handleFaceLogin}
+                  disabled={loading}
                   className="mt-5 tracking-wide font-semibold bg-indigo-500 text-gray-100 w-full py-4 rounded-lg hover:bg-indigo-700 transition-all duration-300 ease-in-out flex flex-row gap-2 items-center justify-center focus:shadow-outline focus:outline-none"
                 >
                   <BiLogIn />
-                  Sign-In
+                  {loading ? "Processing..." : "Login with Face"}
                 </button>
                 <div className="flex flex-col justify-center items-center mt-5 w-full">
                   <p>Don't have an account?</p>
                   <Link
-                  href={"/SignUp"}
-                  className="mt-5 tracking-wide font-semibold text-blue-200 transition-all duration-300 ease-in-out"
-                >
-                  
-                  Get started
-                </Link>
+                    href={"/SignUp"}
+                    className="mt-5 tracking-wide font-semibold text-blue-200 transition-all duration-300 ease-in-out"
+                  >
+                    Get started
+                  </Link>
                 </div>
-                
-              </form>
+              </div>
             </div>
           </div>
         </div>
@@ -163,15 +185,20 @@ export default function Login() {
         {/* Show video feed only if client-side */}
         <div className="flex-1 bg-indigo-100 flex">
           <div className="m-12 xl:m-16 w-full">
-          {error && (
-            <p className="bg-red-500 text-white font-roboto font-bold px-2 py-2 mb-3 rounded-2xl md:w-1/2 w-full">
-              {error}
-            </p>
-          )}
+            {error && (
+              <p className="text-red-500 font-roboto font-bold mb-3 w-full">
+                {error}
+              </p>
+            )}
+            {successMessage && (
+              <p className="text-green-500 font-roboto font-bold w-full">
+                {successMessage}
+              </p>
+            )}
             <video
               ref={videoRef}
               autoPlay
-              playsInline
+              muted
               width="800"
               height="800"
               className="rounded-2xl"

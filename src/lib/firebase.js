@@ -59,3 +59,28 @@ export async function getUserFaceData(userId) {
 
 //registerUserFace(): Stores the detected facial keypoints in Firestore.
 //getUserFaceData(): Retrieves the stored face data for authentication.
+
+export const storeUserFaceEmbedding = async (userId, faceEmbedding) => {
+  try {
+    const userRef = doc(collection(db, "users"), userId);
+    await setDoc(userRef, { faceEmbedding });
+    console.log("Face embeddings stored successfully.");
+  } catch (error) {
+    console.error("Error storing face embeddings:", error);
+  }
+};
+
+export const getUserFaceEmbedding = async (userId) => {
+  try {
+    const userRef = doc(db, "users", userId);
+    const userSnap = await getDoc(userRef);
+    if (userSnap.exists()) {
+      return userSnap.data().faceEmbedding;
+    } else {
+      return null;
+    }
+  } catch (error) {
+    console.error("Error retrieving face embeddings:", error);
+    return null;
+  }
+};

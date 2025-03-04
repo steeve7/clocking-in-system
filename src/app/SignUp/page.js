@@ -1,89 +1,244 @@
 "use client";
-
-import { useState, useRef, useEffect } from "react";
-import {
-  createUserWithEmailAndPassword,
-  onAuthStateChanged,
-} from "firebase/auth";
-import { useRouter } from "next/navigation";
-import { auth } from "@/lib/firebase";
-import { registerUserFace } from "@/lib/firebase";
-import { detectFace, loadModel, startCamera } from "@/lib/faceRecognition";
+import React, { useState, useRef, useEffect } from "react";
+import * as faceapi from "face-api.js";
+import { db, auth } from "@/lib/firebase";
+import { collection, getDocs, setDoc, doc } from "firebase/firestore";
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { BiLogIn } from "react-icons/bi";
+import { useRouter } from "next/navigation";
 
 export default function SignUp() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const videoRef = useRef(null);
-  const router = useRouter();
+  const [userData, setUserData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    role: "Employee",
+    signupDate: new Date().toISOString().split("T")[0], // Default to today's date
+  });
   const [error, setError] = useState("");
-
-  // Redirect already logged-in users to /Dashboard
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        router.push("/Dashboard");
-      }
-    });
-    return () => unsubscribe();
-  }, [router]);
+  const [loading, setLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const modelsLoaded = useRef(false);
+  const detectionInterval = useRef(null);
+  const router = useRouter();
 
   useEffect(() => {
-    if (videoRef.current) {
-      loadModel();
-      startCamera(videoRef.current);
-    }else{
-      setError("Error accessing camera...")
-    }
+    loadModels();
+    startCamera();
+
+    const handleBackButton = () => {
+      window.history.pushState(null, "", window.location.href);
+    };
+
+    window.history.pushState(null, "", window.location.href);
+    window.addEventListener("popstate", handleBackButton);
+
+    return () => {
+      window.removeEventListener("popstate", handleBackButton);
+      stopCamera(); // Cleanup camera when component unmounts
+    };
   }, []);
 
-  const handleSignUp = async (e) => {
-    e.preventDefault();
-    setError("Look at the camera...");
+ useEffect(() => {
+   if (!videoRef.current) return;
 
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 600));
+   const checkVideoReady = () => {
+     if (videoRef.current.readyState >= 2) {
+       console.log("Video is ready, starting face detection...");
+       const canvas = canvasRef.current;
+       if (!canvas) return;
 
-      if (!videoRef.current || !videoRef.current.srcObject) {
-        setError("Camera is not active. Please allow access and try again.");
-        return;
-      }
+       faceapi.matchDimensions(canvas, { width: 800, height: 800 });
 
-      const faceData = await detectFace(videoRef.current);
-      if (!faceData) {
-        setError("Face not detected! Try again.");
-        return;
-      }
+       detectionInterval.current = setInterval(async () => {
+         if (!videoRef.current) return;
+         try {
+           const detections = await faceapi
+             .detectAllFaces(
+               videoRef.current,
+               new faceapi.TinyFaceDetectorOptions()
+             )
+             .withFaceLandmarks()
+             .withFaceDescriptors();
 
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-      const user = userCredential.user;
+           const resizedDetections = faceapi.resizeResults(detections, {
+             width: 800,
+             height: 800,
+           });
 
-      await registerUserFace(user.uid, faceData);
+           const ctx = canvas.getContext("2d");
+           ctx.clearRect(0, 0, canvas.width, canvas.height);
+           faceapi.draw.drawDetections(canvas, resizedDetections);
+         } catch (error) {
+           console.error("Face detection error:", error);
+         }
+       }, 500);
+     } else {
+       setTimeout(checkVideoReady, 500);
+     }
+   };
 
-      setError("Sign-up successful! Face detected!");
-      // Stop the camera before redirecting
-      if (videoRef.current && videoRef.current.srcObject) {
-        const stream = videoRef.current.srcObject;
-        const tracks = stream.getTracks();
-        tracks.forEach((track) => track.stop()); // Stop all video tracks
-        videoRef.current.srcObject = null; // Clear the video source
-      }
-      setEmail("");
-      setPassword("");
+   checkVideoReady();
 
-      // Redirect to Dashboard
-      setTimeout(() => {
-        router.push("/Dashboard");
-      }, 1000);
+   return () => clearInterval(detectionInterval.current); // Cleanup interval on unmount
+ }, []);
 
-    } catch (error) {
-      setError(error.message);
+ const startCamera = async () => {
+   if (videoRef.current?.srcObject) return; // Avoid re-starting
+   try {
+     const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+     videoRef.current.srcObject = stream;
+   } catch (error) {
+     setError("Error accessing camera. Please grant permission.");
+     console.error("Camera access error:", error);
+   }
+ };
+
+
+  
+  const stopCamera = () => {
+    if (videoRef.current?.srcObject) {
+      videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
+      videoRef.current.srcObject = null;
     }
   };
+
+
+  // Load face-api.js models
+  const loadModels = async () => {
+    if (!modelsLoaded.current) {
+      await Promise.all([
+        faceapi.nets.tinyFaceDetector.loadFromUri("/models"),
+        faceapi.nets.faceLandmark68Net.loadFromUri("/models"),
+        faceapi.nets.faceRecognitionNet.loadFromUri("/models"),
+      ]);
+      modelsLoaded.current = true;
+      console.log("Face API models loaded.");
+    }
+  };
+
+  // Handle form input change
+  const handleChange = (e) => {
+    setUserData({ ...userData, [e.target.name]: e.target.value });
+  };
+
+  // Capture face and store user data
+const handleSignup = async (e) => {
+  e.preventDefault();
+  setLoading(true);
+  setError("");
+
+  try {
+    // Check if models are loaded before proceeding
+    if (!modelsLoaded.current) {
+      setError("Face detection models are still loading. Please wait.");
+      setLoading(false);
+      return;
+    }
+
+    // Validate user input
+    if (
+      !userData.name ||
+      !userData.email ||
+      !userData.password ||
+      !userData.signupDate
+    ) {
+      setError("All fields are required.");
+      setLoading(false);
+      return;
+    }
+
+    if (userData.password.length < 6) {
+      setError("Password must be at least 6 characters long.");
+      setLoading(false);
+      return;
+    }
+
+    // Check if camera is accessible
+    if (!videoRef.current) {
+      setError("Camera not accessible.");
+      setLoading(false);
+      return;
+    }
+
+    // Detect face before proceeding with signup
+    const detections = await faceapi
+      .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
+      .withFaceLandmarks()
+      .withFaceDescriptor();
+
+    if (!detections) {
+      setError("No face detected. Try again.");
+      setLoading(false);
+      return;
+    }
+
+    const newFaceDescriptor = Array.from(detections.descriptor);
+
+    // Check if face is already registered before creating Firebase account
+    const usersSnapshot = await getDocs(collection(db, "users"));
+    for (const doc of usersSnapshot.docs) {
+      const storedDescriptor = doc.data().faceDescriptor;
+      if (storedDescriptor && storedDescriptor.length > 0) {
+        const distance = faceapi.euclideanDistance(
+          newFaceDescriptor,
+          storedDescriptor
+        );
+        if (distance < 0.5) {
+          setError("This face is already registered. Please login!");
+          setLoading(false);
+          return;
+        }
+      }
+    }
+
+    // If face is unique, proceed with Firebase signup
+    const userCredential = await createUserWithEmailAndPassword(
+      auth,
+      userData.email.trim(),
+      userData.password
+    );
+    const user = userCredential.user;
+
+    // Update user profile with name
+    await updateProfile(user, { displayName: userData.name.trim() });
+
+    // Store user details in Firestore
+    await setDoc(doc(db, "users", user.email), {
+      uid: user.uid,
+      name: userData.name.trim(),
+      email: user.email,
+      role: userData.role,
+      signupDate: new Date().toISOString(),
+      faceDescriptor: newFaceDescriptor.length ? newFaceDescriptor : null,
+    });
+
+    console.log("User successfully stored!");
+    setSuccessMessage("Signup successful!");
+
+    // Clear input fields
+    setUserData({
+      name: "",
+      email: "",
+      password: "",
+      role: "Employee",
+      signupDate: new Date().toISOString().split("T")[0],
+    });
+
+    // Stop camera before redirecting
+    stopCamera();
+
+    // Redirect to Dashboard
+    router.push("/Dashboard");
+  } catch (error) {
+    console.error("Signup error:", error);
+    setError(`Error adding user: ${error.message}`);
+  }
+
+  setLoading(false);
+};
 
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900 flex justify-center">
@@ -94,29 +249,65 @@ export default function SignUp() {
               Sign-Up with Face Recognition
             </h1>
             <div className="w-full flex-1 mt-8">
-              <form className="mx-auto max-w-xs" onSubmit={handleSignUp}>
+              <form className="mx-auto max-w-xs" onSubmit={handleSignup}>
                 <input
                   className="w-full px-8 py-4 rounded-lg font-medium bg-gray-100 border border-gray-200 placeholder-gray-500 text-sm focus:outline-none focus:border-gray-400 focus:bg-white"
+                  type="name"
+                  name="name"
+                  value={userData.name}
+                  onChange={handleChange}
+                  placeholder="Name"
+                  required
+                />
+                <input
+                  className="w-full px-8 py-4 rounded-lg font-medium bg-gray-100 border border-gray-200 placeholder-gray-500 text-sm focus:outline-none focus:border-gray-400 focus:bg-white mt-5"
                   type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  name="email"
+                  value={userData.email}
+                  onChange={handleChange}
                   placeholder="Email"
                   required
                 />
                 <input
                   className="w-full px-8 py-4 rounded-lg font-medium bg-gray-100 border border-gray-200 placeholder-gray-500 text-sm focus:outline-none focus:border-gray-400 focus:bg-white mt-5"
                   type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  name="password"
+                  onChange={handleChange}
+                  value={userData.password}
                   placeholder="Password"
+                  required
+                />
+                <select
+                  name="role"
+                  onChange={handleChange}
+                  value={userData.role}
+                  style={{
+                    WebkitAppearance: "none", // Remove arrow in Safari & Chrome
+                    MozAppearance: "none", // Remove arrow in Firefox
+                    appearance: "none", // Remove arrow in modern browsers
+                  }}
+                  className="w-full px-8 py-4 pr-5 rounded-lg font-medium bg-gray-100 border border-gray-200 placeholder-gray-500 text-sm focus:outline-none focus:border-gray-400 focus:bg-white mt-5"
+                >
+                  <option value="Employee">Employee</option>
+                  <option value="Manager">Manager</option>
+                  <option value="Manager">Student</option>
+                </select>
+                <input
+                  className="w-full px-8 py-4 rounded-lg font-medium bg-gray-100 border border-gray-200 placeholder-gray-500 text-sm focus:outline-none focus:border-gray-400 focus:bg-white mt-5"
+                  type="date"
+                  name="signupDate"
+                  onChange={handleChange}
+                  value={userData.signupDate}
+                  placeholder="Date"
                   required
                 />
                 <button
                   type="submit"
+                  disabled={loading}
                   className="mt-5 tracking-wide font-semibold bg-indigo-500 text-gray-100 w-full py-4 rounded-lg hover:bg-indigo-700 transition-all duration-300 ease-in-out flex flex-row gap-2 items-center justify-center focus:shadow-outline focus:outline-none"
                 >
                   <BiLogIn />
-                  Sign-Up
+                  {loading ? "Processing..." : "Sign Up"}
                 </button>
               </form>
             </div>
@@ -125,11 +316,16 @@ export default function SignUp() {
 
         <div className="flex-1 bg-indigo-100 flex">
           <div className="m-12 xl:m-16">
-                    {error && (
-            <p className="bg-red-500 text-white font-roboto font-bold px-2 py-2 mb-3 rounded-2xl md:w-1/2 w-full">
-              {error}
-            </p>
-          )}
+            {error && (
+              <p className="text-red-500 font-roboto font-bold mb-3 w-full">
+                {error}
+              </p>
+            )}
+            {successMessage && (
+              <p className="text-green-500 font-roboto font-bold w-full">
+                {successMessage}
+              </p>
+            )}
             <video
               ref={videoRef}
               autoPlay
@@ -137,7 +333,8 @@ export default function SignUp() {
               width="800"
               height="800"
               className="rounded-2xl"
-            />
+            ></video>
+            <canvas ref={canvasRef} style={{ display: "none" }} />
           </div>
         </div>
       </div>

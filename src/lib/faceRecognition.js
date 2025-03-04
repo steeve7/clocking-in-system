@@ -1,14 +1,16 @@
 "use client"; // Ensure this runs only in the client
 
-let model = null;
+import { FaceMesh } from "@mediapipe/face_mesh";
+import * as tf from "@tensorflow/tfjs"; // Import TensorFlow globally for consistency
+let model = null; // Store the model instance globally
 
 // Dynamically load the model only on the client side
+
 export async function loadModel() {
-  if (typeof window === "undefined") return; // Prevent execution on the server
+  if (typeof window === "undefined") return null; // Prevent execution on the server
 
   console.log("Loading face detection model...");
 
-  const tf = await import("@tensorflow/tfjs");
   const faceLandmarksDetection = await import(
     "@tensorflow-models/face-landmarks-detection"
   );
@@ -20,8 +22,9 @@ export async function loadModel() {
     );
     console.log("Face detection model loaded successfully!");
   }
+``
+  return model;
 }
-
 
 // Function to start the user's camera
 export async function startCamera(videoElement) {
@@ -32,7 +35,7 @@ export async function startCamera(videoElement) {
     const stream = await navigator.mediaDevices.getUserMedia({ video: true });
     videoElement.srcObject = stream;
 
-    console.log("Camera started successfully"); // Debugging log
+    console.log("Camera started successfully");
   } catch (error) {
     console.error("Error accessing the camera:", error);
   }
@@ -40,74 +43,80 @@ export async function startCamera(videoElement) {
 
 // Function to detect a face from the video feed
 export async function detectFace(videoElement) {
+  if (!videoElement || !(videoElement instanceof HTMLVideoElement)) {
+    console.error("Invalid video element:", videoElement);
+    return null;
+  }
+
+  if (videoElement.readyState < 2) {
+    console.error("Video frame not ready yet.");
+    return null;
+  }
+
   try {
-    if (typeof window === "undefined" || !videoElement) {
-      console.error("Window or video element not available for face detection");
+    // Load the pre-trained face recognition model
+    const model = await tf.loadGraphModel("path/to/your/facemodel");
+
+    // Create a canvas to capture the video frame
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = videoElement.videoWidth;
+    canvas.height = videoElement.videoHeight;
+    ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+
+    // Convert the image to a tensor
+    const imageTensor = tf.browser.fromPixels(canvas).toFloat().expandDims(0);
+
+    // Get face embeddings from the model
+    const faceEmbedding = model.predict(imageTensor);
+
+    // Convert tensor to Float32Array
+    const embeddingArray = faceEmbedding.dataSync();
+    faceEmbedding.dispose(); // Free memory after extracting data
+    imageTensor.dispose(); // Dispose input tensor
+
+    if (!embeddingArray || embeddingArray.length === 0) {
+      console.error("Failed to extract face embeddings.");
       return null;
     }
 
-    if (!model) {
-      console.error("Face model not loaded!");
-      return null;
-    }
+    console.log("Extracted Float32Array:", embeddingArray);
 
-    // Ensure video is ready before running detection
-    if (videoElement.readyState < 2) {
-      console.warn("Video not ready for face detection");
-      return null;
-    }
+    // 🔹 Store only a subset of the embedding data to reduce storage size
+    const compressedEmbedding = embeddingArray.slice(0, 100); // Take only first 100 values
 
-    console.log("Running face detection...");
-    const faces = await model.estimateFaces(videoElement);
-    console.log("Faces detected:", faces);
+    // 🔹 Convert to Base64 for storage
+    const base64Embedding = btoa(
+      String.fromCharCode(
+        ...new Uint8Array(new Float32Array(compressedEmbedding).buffer)
+      )
+    );
 
-    if (!faces || faces.length === 0) {
-      console.warn(
-        "⚠️ No face detected! Make sure your face is well-lit and visible."
-      );
-      return null;
-    }
+    console.log("Flattened and compressed face data:", base64Embedding);
 
-    console.log("✅ Face detected successfully!");
-    return faces[0].keypoints.map(({ x, y }) => ({ x, y }));
+    return base64Embedding;
   } catch (error) {
-    console.error("❌ Face detection error:", error);
+    console.error("Error detecting face:", error);
     return null;
   }
 }
 
 
+
+
 // Compare two sets of facial keypoints
-export function compareFaces(detectedFace, storedFace) {
-  if (
-    !detectedFace ||
-    !storedFace ||
-    detectedFace.length !== storedFace.length
-  ) {
-    console.warn("Face data mismatch or missing!");
-    return false;
+export function compareFaces(detectedEmbedding, storedEmbedding) {
+  if (!detectedEmbedding || !storedEmbedding) {
+    console.error("Invalid embeddings provided for comparison.");
+    return null;
   }
 
-  let totalDistance = 0;
-  const numPoints = detectedFace.length;
+  const detectedTensor = tf.tensor(detectedEmbedding);
+  const storedTensor = tf.tensor(storedEmbedding);
 
-  for (let i = 0; i < numPoints; i++) {
-    const dx = detectedFace[i].x - storedFace[i].x;
-    const dy = detectedFace[i].y - storedFace[i].y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    totalDistance += distance;
-  }
+  const similarity = tf.losses.cosineDistance(detectedTensor, storedTensor, 0);
+  detectedTensor.dispose();
+  storedTensor.dispose();
 
-  const avgDistance = totalDistance / numPoints;
-  console.log("Average distance between face keypoints:", avgDistance);
-
-  // Set a threshold for the average distance.
-  // You may need to adjust this value based on your testing conditions.
-  // For example, if average distance is less than 40, we consider the faces a match.
-  const threshold = 60;
-
-  return avgDistance < threshold;
+  return similarity.dataSync()[0];
 }
-
-
-

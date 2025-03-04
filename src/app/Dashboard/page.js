@@ -7,37 +7,64 @@ import { LuSearch } from "react-icons/lu";
 import Attendance from "../Dashboard/Attendance/page";
 import { useRouter } from "next/navigation";
 import { signOut, onAuthStateChanged } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
+import { collection, getDocs, query, where } from "firebase/firestore";
 
 
 export default function Page() {
   const [selectedMenu, setSelectedMenu] = useState("Dashboard");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
+  const [userName, setUserName] = useState(""); // Store user's name
   const router = useRouter();
 
-  useEffect(() => {
-    // Check if user is authenticated
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        router.replace("/Login"); // Redirect if not logged in
-      } else {
-        setLoading(false);
+useEffect(() => {
+  const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    if (!currentUser) {
+      router.replace("/Login"); // Redirect immediately if not logged in
+      return;
+    }
+
+    setUser(currentUser);
+
+    // Fetch user details from Firestore
+    try {
+      const userRef = collection(db, "users");
+      const q = query(userRef, where("uid", "==", currentUser.uid));
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        const userData = querySnapshot.docs[0].data();
+        setUserName(userData.name);
       }
-    });
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+    }
 
-    return () => unsubscribe(); // Cleanup function
-  }, [router]);
+    setLoading(false);
+  });
 
-const handleLogout = async () => {
-  try {
-    await signOut(auth);
-    router.replace("/Login"); // Redirect to login after logout
-  } catch (error) {
-    setError("Logout Error!", + error.message);
-  }
-};
+  return () => unsubscribe();
+}, []);
 
+if (loading) {
+  return null; // Prevent any rendering while checking authentication
+}
+
+// If no user, return null (prevents flickering)
+if (!user) {
+  return null;
+}
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      router.replace("/Login"); // Redirect to login after logout
+    } catch (error) {
+      console.error("Logout Error:", error.message);
+    }
+  };
 
   const renderContent = () => {
     switch (selectedMenu) {
@@ -52,14 +79,6 @@ const handleLogout = async () => {
     setSelectedMenu(menuName);
     setIsSidebarOpen(false); // Close the sidebar on menu click
   };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        Loading...
-      </div>
-    );
-  }
 
   return (
     <div className="flex flex-row h-screen">
@@ -149,7 +168,7 @@ const handleLogout = async () => {
               onClick={() => setIsSidebarOpen(true)}
             />
             <h2 className="font-roboto font-medium md:text-[20px] text-[15px] text-black">
-              Hello Welcome!
+              Welcome {userName}!
             </h2>
           </div>
           <div className="flex items-center gap-4 w-full md:w-auto">
