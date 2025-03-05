@@ -236,10 +236,10 @@ emailjs.send(
   "abh7mLjaQox8Fuece"   // Your Public Key
 )
 .then((response) => {
-  console.log("✅ Email sent successfully to:", userData.email);
+  console.log(" Email sent successfully to:", userData.email);
 })
 .catch((error) => {
-  console.error("❌ Error sending email:", error);
+  console.error("Error sending email:", error);
 });
 
 
