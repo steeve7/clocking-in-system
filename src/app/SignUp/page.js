@@ -256,7 +256,7 @@ emailjs.send(
     stopCamera();
 
     // Redirect to Dashboard
-    router.push("/desktop");
+    router.push("/dashboard");
   } catch (error) {
     console.error("Signup error:", error);
     setError(`Error adding user: ${error.message}`);

@@ -23,7 +23,7 @@ useEffect(() => {
   // Redirect to dashboard if already logged in
   const unsubscribe = auth.onAuthStateChanged((user) => {
     if (user) {
-      router.push("/desktop");
+      router.push("/dashboard");
     }
   });
   return () => unsubscribe();
@@ -37,27 +37,27 @@ async function loadModels() {
   ]);
 }
 
-// async function startCamera() {
-//   try {
-//     const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-//     if (videoRef.current) {
-//       videoRef.current.srcObject = stream;
-//     }
-//   } catch (error) {
-//     setError("Camera access denied. Please grant permission.");
-//   }
-// }
+async function startCamera() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    if (videoRef.current) {
+      videoRef.current.srcObject = stream;
+    }
+  } catch (error) {
+    setError("Camera access denied. Please grant permission.");
+  }
+}
 
- const startCamera = async () => {
-   if (videoRef.current?.srcObject) return; // Avoid re-starting
-   try {
-     const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-     videoRef.current.srcObject = stream;
-   } catch (error) {
-     setError("Error accessing camera. Please grant permission.");
-     console.error("Camera access error:", error);
-   }
- };
+//  const startCamera = async () => {
+//    if (videoRef.current?.srcObject) return; // Avoid re-starting
+//    try {
+//      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+//      videoRef.current.srcObject = stream;
+//    } catch (error) {
+//      setError("Error accessing camera. Please grant permission.");
+//      console.error("Camera access error:", error);
+//    }
+//  };
 
 function stopCamera() {
   if (videoRef.current?.srcObject) {
@@ -120,7 +120,7 @@ async function handleFaceLogin() {
     await signInWithEmailAndPassword(auth, email.trim(), password);
     setSuccessMessage("Sign-in Successfully!")
     stopCamera();
-    router.push("/desktop");
+    router.push("/dashboard");
   } catch (err) {
     setError("Invalid email or password.");
   }
@@ -173,6 +173,7 @@ async function handleFaceLogin() {
                   >
                     Get started
                   </Link>
+                  <div onClick={() => startCamera()} className="bg-green-300 py-2 px-2">start camera</div>
                 </div>
               </div>
             </div>

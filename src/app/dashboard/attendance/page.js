@@ -61,13 +61,15 @@ export default function Dashboard() {
 
   return (
     <div className="p-6">
-      <h1 className="text-3xl font-bold text-center mb-6 text-black">Attendance Tracking</h1>
+      <h1 className="text-3xl font-bold text-center mb-6 text-black">
+        Attendance Tracking
+      </h1>
 
       {loading ? (
         <p className="text-center">Loading...</p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse border border-black">
+          <table className="min-w-full border-collapse border border-black">
             <thead className="bg-gray-400">
               <tr className="text-left">
                 <th className="p-3 border text-white">User</th>
@@ -81,22 +83,28 @@ export default function Dashboard() {
               {users.map((user) => (
                 <tr key={user.id} className="border">
                   <td className="p-3 border text-black">{user.name}</td>
-                  <td className="p-3 border text-black">{user.email}</td>
+                  <td className="p-3 border text-black truncate max-w-xs">
+                    {user.email}
+                  </td>
                   <td className="p-3 border text-black">{user.role}</td>
-                  <td className="p-3 border text-black">{user.lastAttendance || "Never"}</td>
+                  <td className="p-3 border text-black">
+                    {user.lastAttendance || "Never"}
+                  </td>
                   <td className="p-3 border text-center">
-                  {check ? 
-                    <input
-                      type="checkbox"
-                      checked={user.status}
-                      onChange={() => markAttendance(user.id)}
-                      disabled={user.status}
-                      className="w-5 h-5 text-black"
-                      onClick={() => setCheck(!check)}
-                    />
-                    :
-                    <span className="ml-2 text-black">{user.status ? "Active" : "Inactive"}</span>
-                  } 
+                    {check ? (
+                      <span className="ml-2 text-black">
+                        {user.status ? "Active" : "Inactive"}
+                      </span>
+                    ) : (
+                      <input
+                        type="checkbox"
+                        checked={user.status}
+                        onChange={() => markAttendance(user.id)}
+                        disabled={user.status}
+                        className="w-5 h-5 text-black"
+                        onClick={() => setCheck(!check)}
+                      />
+                    )}
                   </td>
                 </tr>
               ))}
