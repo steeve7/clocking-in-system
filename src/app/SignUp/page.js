@@ -122,7 +122,7 @@ export default function SignUp() {
     }
   };
 
-  // Handle form input change
+  // Handle form input change 
   const handleChange = (e) => {
     setUserData({ ...userData, [e.target.name]: e.target.value });
   };
@@ -256,7 +256,7 @@ emailjs.send(
     stopCamera();
 
     // Redirect to Dashboard
-    router.push("/Dashboard");
+    router.push("/desktop");
   } catch (error) {
     console.error("Signup error:", error);
     setError(`Error adding user: ${error.message}`);

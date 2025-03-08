@@ -23,7 +23,7 @@ useEffect(() => {
   // Redirect to dashboard if already logged in
   const unsubscribe = auth.onAuthStateChanged((user) => {
     if (user) {
-      router.push("/dashboard");
+      router.push("/desktop");
     }
   });
   return () => unsubscribe();
@@ -86,7 +86,6 @@ async function handleFaceLogin() {
 
   if (!faceDetections) {
     setError("No face detected. Try again.");
-    stopCamera();
     setLoading(false);
     return;
   }
@@ -97,7 +96,6 @@ async function handleFaceLogin() {
 
   if (querySnapshot.empty) {
     setError("User not found. Please sign up.");
-    stopCamera();
     setLoading(false);
     return;
   }
@@ -113,7 +111,6 @@ async function handleFaceLogin() {
 
   if (distance > 0.6) {
     setError("Face does not match. Access denied.");
-    stopCamera();
     setLoading(false);
     return;
   }
@@ -123,7 +120,7 @@ async function handleFaceLogin() {
     await signInWithEmailAndPassword(auth, email.trim(), password);
     setSuccessMessage("Sign-in Successfully!")
     stopCamera();
-    router.push("/Dashboard");
+    router.push("/desktop");
   } catch (err) {
     setError("Invalid email or password.");
   }
