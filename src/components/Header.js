@@ -74,7 +74,7 @@ export default function Header({ setIsSidebarOpen }) {
     }
   };
   return (
-    <div className="flex items-center justify-between p-6 bg-white shadow-md w-full">
+    <div className="flex items-center justify-between p-6 bg-white shadow-md w-full z-50">
       {/* Menu Button */}
       <MdMenu
         className="block md:hidden text-2xl cursor-pointer md:mr-0 mr-5"
@@ -86,7 +86,7 @@ export default function Header({ setIsSidebarOpen }) {
           className="flex flex-row items-center"
           onClick={() => setDropdown(!dropdown)}
         >
-          <h2 className="text-lg font-medium md:flex flex-row items-center gap-2 text-black cursor-pointer hidden">
+          <h2 className="text-lg font-avenir font-medium md:flex flex-row items-center gap-2 text-black cursor-pointer hidden">
             Welcome {userName}!
           </h2>
           <MdOutlineKeyboardArrowDown color="black" />
@@ -98,19 +98,19 @@ export default function Header({ setIsSidebarOpen }) {
           }`}
         >
           <div className="flex flex-col gap-2 items-start">
-            <h2 className="font-roboto font-medium text-black">{userName}</h2>
-            <p className="font-roboto font-medium text-gray-700">{userEmail}</p>
+            <h2 className="font-medium text-black font-avenir">{userName}</h2>
+            <p className="font-medium text-gray-700 font-work">{userEmail}</p>
           </div>
           <div className="flex flex-col items-start gap-6 mt-5 md:pl-5">
-            <p className="font-roboto font-medium text-black flex flex-row items-center gap-2">
+            <p className="font-work font-medium text-black flex flex-row items-center gap-2">
               <FaUser />
               Edit Profile
             </p>
-            <p className="font-roboto font-medium text-black flex flex-row gap-2 items-center">
+            <p className="font-work font-medium text-black flex flex-row gap-2 items-center">
               <IoSettingsOutline />
               Account settings
             </p>
-            <p className="font-roboto font-medium text-black flex flex-row items-center gap-2">
+            <p className="font-work font-medium text-black flex flex-row items-center gap-2">
               <FaSupple />
               Support
             </p>
@@ -118,7 +118,7 @@ export default function Header({ setIsSidebarOpen }) {
           <div className="w-full border border-black mt-5" />
           <div className="flex flex-row items-center gap-2 mt-5">
             <FaSignOutAlt color="black" />
-            <button className="text-black" onClick={handleLogout}>
+            <button className="text-black font-work" onClick={handleLogout}>
               Sign out
             </button>
           </div>
@@ -130,7 +130,7 @@ export default function Header({ setIsSidebarOpen }) {
         <LuSearch className="absolute top-1/2 left-3 transform -translate-y-1/2 text-gray-500" />
         <input
           type="text"
-          className="bg-white outline-none w-full pl-10 p-2 rounded-md border border-gray-300"
+          className="bg-white outline-none w-full pl-10 p-2 rounded-md border border-gray-300 placeholder:font-work"
           placeholder="Search..."
         />
       </div>

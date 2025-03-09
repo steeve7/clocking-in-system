@@ -33,7 +33,7 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen }) {
       }`}
     >
       <div className="flex gap-2 justify-between flex-row items-center pl-4">
-        <h2 className="text-xl py-4 font-bold">Test Project</h2>
+        <h2 className="text-xl py-4 font-bold font-avenir">Test Project</h2>
         <MdClose
           className="block md:hidden cursor-pointer"
           onClick={() => setIsSidebarOpen(false)}
@@ -42,9 +42,9 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen }) {
       </div>
 
       <div className="mt-6 space-y-2">
-        <span className="">Menu</span>
+        <span className="font-work">Menu</span>
         {[
-          { name: "Profile", icon: <FaUser size={15} /> },
+          { name: "User Profile", icon: <FaUser size={15} /> },
           { name: "Attendance", icon: <FaCalendarCheck size={20} /> },
         ].map((menu) => (
           <div
@@ -53,20 +53,10 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen }) {
             className="flex items-start gap-2 p-2 pl-4 cursor-pointer rounded-md hover:bg-black hover:text-white"
           >
             <p>{menu.icon}</p>
-            <p className="font-medium">{menu.name}</p>
+            <p className="font-medium font-avenir">{menu.name}</p>
           </div>
         ))}
       </div>
-
-      {/* Logout Button */}
-      {/*<div className="mt-8">
-        <button
-          onClick={handleLogout}
-          className="bg-black text-white px-4 py-2 rounded-md hover:bg-red-700 w-full"
-        >
-          Logout
-        </button>
-      </div>*/}
     </div>
   );
 }
