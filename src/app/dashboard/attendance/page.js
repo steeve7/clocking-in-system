@@ -68,7 +68,10 @@ export default function Dashboard() {
           Attendance Table
         </h1>
         <div className="flex flex-row gap-2 items-center">
-          <Link href={"/"} className="font-avenir text-black font-medium">
+          <Link
+            href={"/dashboard"}
+            className="font-avenir text-black font-medium"
+          >
             Home
           </Link>
           <MdKeyboardArrowRight color="black" />
@@ -117,20 +120,17 @@ export default function Dashboard() {
                     {user.lastAttendance || "Never"}
                   </td>
                   <td className="p-3 text-center">
-                    {check ? (
-                      <span className="ml-2 text-black">
-                        {user.status ? "Active" : "Inactive"}
-                      </span>
-                    ) : (
-                      <input
-                        type="checkbox"
-                        checked={user.status}
-                        onChange={() => markAttendance(user.id)}
-                        disabled={user.status}
-                        className="w-5 h-5 text-black"
-                        onClick={() => setCheck(!check)}
-                      />
-                    )}
+                    <input
+                      type="checkbox"
+                      checked={user.status}
+                      onChange={() => markAttendance(user.id)}
+                      disabled={user.status}
+                      className="w-5 h-5 text-black"
+                      onClick={() => setCheck(!check)}
+                    />
+                    <span className="ml-2 text-black">
+                      {user.status ? "Active" : "Inactive"}
+                    </span>
                   </td>
                 </tr>
               ))}

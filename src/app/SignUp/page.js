@@ -14,7 +14,8 @@ export default function SignUp() {
     name: "",
     email: "",
     password: "",
-    role: "Employee",
+    role: "",
+    location: "",
     signupDate: new Date().toISOString().split("T")[0], // Default to today's date
   });
   const [error, setError] = useState("");
@@ -146,6 +147,8 @@ const handleSignup = async (e) => {
       !userData.name ||
       !userData.email ||
       !userData.password ||
+      !userData.role ||
+      !userData.location ||
       !userData.signupDate
     ) {
       setError("All fields are required.");
@@ -214,6 +217,7 @@ const handleSignup = async (e) => {
       name: userData.name.trim(),
       email: user.email,
       role: userData.role,
+      location: userData.location,
       signupDate: new Date().toISOString(),
       faceDescriptor: newFaceDescriptor.length ? newFaceDescriptor : null,
     });
@@ -226,6 +230,7 @@ const handleSignup = async (e) => {
   to_email: userData.email.trim(), //  Send email to the user who signed up
   name: userData.name,
   role: userData.role,
+  location:userData.location,
   signupDate: new Date().toISOString().split("T")[0],
 };
 
@@ -248,7 +253,8 @@ emailjs.send(
       name: "",
       email: "",
       password: "",
-      role: "Employee",
+      role: "",
+      location: "",
       signupDate: new Date().toISOString().split("T")[0],
     });
 
@@ -293,39 +299,54 @@ emailjs.send(
                   placeholder="Email"
                   required
                 />
-                <input
-                  className="w-full px-8 py-4 rounded-lg font-medium bg-gray-100 border border-gray-200 placeholder-gray-500 text-sm focus:outline-none focus:border-gray-400 focus:bg-white mt-5"
-                  type="password"
-                  name="password"
-                  onChange={handleChange}
-                  value={userData.password}
-                  placeholder="Password"
-                  required
-                />
-                <select
-                  name="role"
-                  onChange={handleChange}
-                  value={userData.role}
-                  style={{
-                    WebkitAppearance: "none", // Remove arrow in Safari & Chrome
-                    MozAppearance: "none", // Remove arrow in Firefox
-                    appearance: "none", // Remove arrow in modern browsers
-                  }}
-                  className="w-full px-8 py-4 pr-5 rounded-lg font-medium bg-gray-100 border border-gray-200 placeholder-gray-500 text-sm focus:outline-none focus:border-gray-400 focus:bg-white mt-5"
-                >
-                  <option value="Employee">Employee</option>
-                  <option value="Manager">Manager</option>
-                  <option value="Manager">Student</option>
-                </select>
-                <input
-                  className="w-full px-8 py-4 rounded-lg font-medium bg-gray-100 border border-gray-200 placeholder-gray-500 text-sm focus:outline-none focus:border-gray-400 focus:bg-white mt-5"
-                  type="date"
-                  name="signupDate"
-                  onChange={handleChange}
-                  value={userData.signupDate}
-                  placeholder="Date"
-                  required
-                />
+                <div className="flex flex-row items-center gap-4">
+                  <input
+                    className="md:w-[50%] w-full px-8 py-4 rounded-lg font-medium bg-gray-100 border border-gray-200 placeholder-gray-500 text-sm focus:outline-none focus:border-gray-400 focus:bg-white mt-5"
+                    type="password"
+                    name="password"
+                    onChange={handleChange}
+                    value={userData.password}
+                    placeholder="Password"
+                    required
+                  />
+                  <select
+                    name="role"
+                    onChange={handleChange}
+                    value={userData.role}
+                    style={{
+                      WebkitAppearance: "none", // Remove arrow in Safari & Chrome
+                      MozAppearance: "none", // Remove arrow in Firefox
+                      appearance: "none", // Remove arrow in modern browsers
+                    }}
+                    className="md:w-[50%] w-full px-8 py-4 pr-5 rounded-lg font-medium bg-gray-100 border border-gray-200 placeholder-gray-500 text-sm focus:outline-none focus:border-gray-400 focus:bg-white mt-5"
+                  >
+                    <option value="Employee">Employee</option>
+                    <option value="Manager">Manager</option>
+                    <option value="Student">Student</option>
+                  </select>
+                </div>
+                <div className="flex md:flex-row flex-col items-center gap-2">
+                  <input
+                    className="md:w-[50%] w-full px-8 py-4 rounded-lg font-medium bg-gray-100 border border-gray-200 placeholder-gray-500 text-sm focus:outline-none focus:border-gray-400 focus:bg-white mt-5"
+                    type="text"
+                    name="location"
+                    onChange={handleChange}
+                    value={userData.location}
+                    placeholder="Location"
+                    required
+                  />
+
+                  <input
+                    className="md:w-[50%] w-full px-8 py-4 rounded-lg font-medium bg-gray-100 border border-gray-200 placeholder-gray-500 text-sm focus:outline-none focus:border-gray-400 focus:bg-white mt-5"
+                    type="date"
+                    name="signupDate"
+                    onChange={handleChange}
+                    value={userData.signupDate}
+                    placeholder="Date"
+                    required
+                  />
+                </div>
+
                 <button
                   type="submit"
                   disabled={loading}
@@ -358,7 +379,7 @@ emailjs.send(
               width="800"
               height="800"
               className="rounded-2xl"
-            ></video>
+            />
             <canvas ref={canvasRef} style={{ display: "none" }} />
           </div>
         </div>

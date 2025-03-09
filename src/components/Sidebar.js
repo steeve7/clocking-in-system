@@ -20,7 +20,7 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen }) {
 
       if (menuName === "Attendance") {
         router.push("/dashboard/attendance"); // Navigate to "dashboard/attendance"
-      } else if (menuName === "Profile") {
+      } else if (menuName === "User Profile") {
         router.push("/dashboard/profile");
       }
     };

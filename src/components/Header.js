@@ -9,6 +9,7 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function Header({ setIsSidebarOpen }) {
   const [user, setUser] = useState(null);
@@ -102,15 +103,18 @@ export default function Header({ setIsSidebarOpen }) {
             <p className="font-medium text-gray-700 font-work">{userEmail}</p>
           </div>
           <div className="flex flex-col items-start gap-6 mt-5 md:pl-5">
-            <p className="font-work font-medium text-black flex flex-row items-center gap-2">
+            <Link
+              href={"/dashboard/profile"}
+              className="font-work font-medium text-black flex flex-row items-center gap-2"
+            >
               <FaUserEdit />
               Edit Profile
-            </p>
-            <p className="font-work font-medium text-black flex flex-row gap-2 items-center">
+            </Link>
+            <p className="font-work cursor-pointer font-medium text-black flex flex-row gap-2 items-center">
               <IoSettingsOutline />
               Account settings
             </p>
-            <p className="font-work font-medium text-black flex flex-row items-center gap-2">
+            <p className="font-work cursor-pointer font-medium text-black flex flex-row items-center gap-2">
               <FaSupple />
               Support
             </p>

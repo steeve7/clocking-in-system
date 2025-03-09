@@ -16,6 +16,7 @@ export default function page() {
     const [userEmail, setUserEmail] = useState("");
     const [userRole, setUserrole] = useState("");
     const [user, setUser] = useState(null);
+    const [location, setLocation] = useState("");
     const router = useRouter
 
    useEffect(() => {
@@ -38,7 +39,8 @@ export default function page() {
            const userData = querySnapshot.docs[0].data();
            setUserName(userData.name || ""); // Ensure userData.name is a string
            setUserEmail(userData.email || "");
-           setUserrole(userData.role || "")
+           setUserrole(userData.role || "");
+           setLocation(userData.location || "");
          }
        } catch (error) {
          console.error("Error fetching user data:", error);
@@ -126,7 +128,7 @@ export default function page() {
         </div>
         <div>
           <h2 className="font-bold text-black font-avenir">Country</h2>
-          <p className="font-medium text-black font-work">nigeria</p>
+          <p className="font-medium text-black font-work">{location}</p>
         </div>
         <span className="text-black mt-5 font-work md:mt-0 md:hidden cursor-pointer border border-gray-300 px-3 py-3 rounded-full flex flex-row items-center justify-center gap-2">
           <MdOutlineModeEditOutline />

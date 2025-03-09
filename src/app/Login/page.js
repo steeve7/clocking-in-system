@@ -17,6 +17,7 @@ const [loading, setLoading] = useState(false);
 const [error, setError] = useState("");
 const [successMessage, setSuccessMessage] = useState("");
 const videoRef = useRef(null);
+const canvasRef = useRef(null);
 
 useEffect(() => {
   startCamera();
@@ -37,27 +38,27 @@ async function loadModels() {
   ]);
 }
 
-async function startCamera() {
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-    if (videoRef.current) {
-      videoRef.current.srcObject = stream;
-    }
-  } catch (error) {
-    setError("Camera access denied. Please grant permission.");
-  }
-}
+// async function startCamera() {
+//   try {
+//     const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+//     if (videoRef.current) {
+//       videoRef.current.srcObject = stream;
+//     }
+//   } catch (error) {
+//     setError("Camera access denied. Please grant permission.");
+//   }
+// }
 
-//  const startCamera = async () => {
-//    if (videoRef.current?.srcObject) return; // Avoid re-starting
-//    try {
-//      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-//      videoRef.current.srcObject = stream;
-//    } catch (error) {
-//      setError("Error accessing camera. Please grant permission.");
-//      console.error("Camera access error:", error);
-//    }
-//  };
+ const startCamera = async () => {
+   if (videoRef.current?.srcObject) return; // Avoid re-starting
+   try {
+     const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+     videoRef.current.srcObject = stream;
+   } catch (error) {
+     setError("Error accessing camera. Please grant permission.");
+     console.error("Camera access error:", error);
+   }
+ };
 
 function stopCamera() {
   if (videoRef.current?.srcObject) {
@@ -173,7 +174,6 @@ async function handleFaceLogin() {
                   >
                     Get started
                   </Link>
-                  <div onClick={() => startCamera()} className="bg-green-300 py-2 px-2">start camera</div>
                 </div>
               </div>
             </div>
@@ -201,6 +201,7 @@ async function handleFaceLogin() {
               height="800"
               className="rounded-2xl"
             />
+            <canvas ref={canvasRef} style={{ display: "none" }} />
           </div>
         </div>
       </div>
