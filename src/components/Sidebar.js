@@ -2,21 +2,13 @@
 import { MdClose } from "react-icons/md";
 import { FaUser, FaCalendarCheck } from "react-icons/fa";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+// import { useState, useEffect } from "react";
 
 export default function Sidebar({ isSidebarOpen, setIsSidebarOpen }) {
-  const router = useRouter();
-   const [isMobile, setIsMobile] = useState(false);
-
-   useEffect(() => {
-     const checkScreenSize = () => setIsMobile(window.innerWidth < 768);
-     checkScreenSize();
-     window.addEventListener("resize", checkScreenSize);
-     return () => window.removeEventListener("resize", checkScreenSize);
-   }, []);
+  const router = useRouter()
 
     const handleMenuClick = (menuName) => {
-      if (isMobile) setIsSidebarOpen(true); // Open sidebar only on mobile
+     setIsSidebarOpen(false);
 
       if (menuName === "Attendance") {
         router.push("/dashboard/attendance"); // Navigate to "dashboard/attendance"

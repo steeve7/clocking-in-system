@@ -17,7 +17,6 @@ const [loading, setLoading] = useState(false);
 const [error, setError] = useState("");
 const [successMessage, setSuccessMessage] = useState("");
 const videoRef = useRef(null);
-const canvasRef = useRef(null);
 
 useEffect(() => {
   startCamera();
@@ -201,7 +200,6 @@ async function handleFaceLogin() {
               height="800"
               className="rounded-2xl"
             />
-            <canvas ref={canvasRef} style={{ display: "none" }} />
           </div>
         </div>
       </div>

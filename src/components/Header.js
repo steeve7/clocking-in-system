@@ -75,7 +75,7 @@ export default function Header({ setIsSidebarOpen }) {
     }
   };
   return (
-    <div className="flex items-center justify-between p-6 bg-white shadow-md w-full z-50">
+    <div className="flex items-center justify-between p-6 bg-white shadow-md w-full z-10">
       {/* Menu Button */}
       <MdMenu
         className="block md:hidden text-2xl cursor-pointer md:mr-0 mr-5"
@@ -90,7 +90,7 @@ export default function Header({ setIsSidebarOpen }) {
           <h2 className="text-lg font-avenir font-medium md:flex flex-row items-center gap-2 text-black cursor-pointer hidden">
             Welcome {userName}!
           </h2>
-          <MdOutlineKeyboardArrowDown color="black" />
+          <MdOutlineKeyboardArrowDown color="black" className="cursor-pointer" />
         </div>
 
         <div
@@ -106,18 +106,11 @@ export default function Header({ setIsSidebarOpen }) {
             <Link
               href={"/dashboard/profile"}
               className="font-work font-medium text-black flex flex-row items-center gap-2"
+              onClick={() => setDropdown(false)}
             >
               <FaUserEdit />
               Edit Profile
             </Link>
-            <p className="font-work cursor-pointer font-medium text-black flex flex-row gap-2 items-center">
-              <IoSettingsOutline />
-              Account settings
-            </p>
-            <p className="font-work cursor-pointer font-medium text-black flex flex-row items-center gap-2">
-              <FaSupple />
-              Support
-            </p>
           </div>
           <div className="w-full border border-black mt-5" />
           <div className="flex flex-row items-center gap-2 mt-5">
