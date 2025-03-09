@@ -41,7 +41,7 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen }) {
         />
       </div>
 
-      <div className="mt-6 space-y-2">
+      <div className="mt-6 space-y-2 pl-4">
         <span className="font-work">Menu</span>
         {[
           { name: "User Profile", icon: <FaUser size={15} /> },

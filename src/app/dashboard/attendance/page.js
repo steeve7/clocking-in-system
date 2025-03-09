@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { auth, db } from "@/lib/firebase";
 import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
+import { MdKeyboardArrowRight } from "react-icons/md";
+import Link from "next/link";
 
 export default function Dashboard() {
   const [users, setUsers] = useState([]);
@@ -61,36 +63,60 @@ export default function Dashboard() {
 
   return (
     <div className="p-6">
-      <h1 className="text-3xl font-bold text-center mb-6 text-black">
-        Attendance Tracking
-      </h1>
+      <div className="flex md:flex-row flex-col justify-between md:items-center items-start mb-3">
+        <h1 className="font-bold text-center md:mb-0 mb-2 text-black font-avenir">
+          Attendance Table
+        </h1>
+        <div className="flex flex-row gap-2 items-center">
+          <Link href={"/"} className="font-avenir text-black font-medium">
+            Home
+          </Link>
+          <MdKeyboardArrowRight color="black" />
+          <Link
+            href={"/attendance"}
+            className="font-avenir text-black font-medium"
+          >
+            Attendance Table
+          </Link>
+        </div>
+      </div>
 
       {loading ? (
         <p className="text-center">Loading...</p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full border-collapse border border-black">
-            <thead className="bg-gray-400">
+        <div className="overflow-x-auto rounded-2xl border border-grey-300">
+          <table className="min-w-full border-collapse">
+            <thead className="bg-white">
               <tr className="text-left">
-                <th className="p-3 border text-white">User</th>
-                <th className="p-3 border text-white">Email</th>
-                <th className="p-3 border text-white">Role</th>
-                <th className="p-3 border text-white">Last Attendance</th>
-                <th className="p-3 border text-white">Status</th>
+                <th className="p-3 text-black font-avenir font-medium">User</th>
+                <th className="p-3 text-black font-avenir font-medium">
+                  Email
+                </th>
+                <th className="p-3 text-black font-avenir font-medium">Role</th>
+                <th className="p-3 text-black font-avenir font-medium">
+                  Last Attendance
+                </th>
+                <th className="p-3 text-black font-avenir font-medium">
+                  Status
+                </th>
               </tr>
             </thead>
             <tbody>
               {users.map((user) => (
-                <tr key={user.id} className="border">
-                  <td className="p-3 border text-black">{user.name}</td>
-                  <td className="p-3 border text-black truncate max-w-xs">
+                <tr key={user.id} className="border bg-white">
+                  <td className="p-3 text-black font-work font-normal">
+                    {user.name}
+                  </td>
+                  <td className="p-3  text-black truncate max-w-xs font-work font-normal">
                     {user.email}
                   </td>
-                  <td className="p-3 border text-black">{user.role}</td>
-                  <td className="p-3 border text-black">
+                  <td className="p-3 text-black font-work font-normal">
+                    {user.role}
+                  </td>
+                  <td className="p-3  text-black font-work font-normal">
                     {user.lastAttendance || "Never"}
                   </td>
-                  <td className="p-3 border text-center">
+                  <td className="p-3 text-center">
                     {check ? (
                       <span className="ml-2 text-black">
                         {user.status ? "Active" : "Inactive"}

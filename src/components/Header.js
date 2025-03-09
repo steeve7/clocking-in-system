@@ -1,7 +1,7 @@
 "use client";
 import { MdMenu } from "react-icons/md";
 import { LuSearch } from "react-icons/lu";
-import { FaUser, FaSupple, FaSignOutAlt } from "react-icons/fa";
+import { FaUserEdit, FaSupple, FaSignOutAlt } from "react-icons/fa";
 import { IoSettingsOutline } from "react-icons/io5";
 import { MdOutlineKeyboardArrowDown } from "react-icons/md";
 import { useEffect, useState } from "react";
@@ -103,7 +103,7 @@ export default function Header({ setIsSidebarOpen }) {
           </div>
           <div className="flex flex-col items-start gap-6 mt-5 md:pl-5">
             <p className="font-work font-medium text-black flex flex-row items-center gap-2">
-              <FaUser />
+              <FaUserEdit />
               Edit Profile
             </p>
             <p className="font-work font-medium text-black flex flex-row gap-2 items-center">
