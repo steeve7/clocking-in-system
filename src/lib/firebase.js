@@ -2,6 +2,7 @@
 import { initializeApp } from "firebase/app";
 // import { getAnalytics } from "firebase/analytics";
 import { getAuth } from "firebase/auth";
+import { getStorage } from "firebase/storage";
 import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -19,40 +20,41 @@ const app = initializeApp(firebaseConfig);
 // const analytics = getAnalytics(app);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const storage = getStorage(app);
 
-export { auth, db };
+export { auth, db, storage };
 
 // ---------------------------
-// 🔹 Firestore Functions for Face Recognition
+// Firestore Functions for Face Recognition
 // -----
 
 // Save face data during sign-up
-export async function registerUserFace(userId, faceData) {
-  try {
-    const userRef = doc(db, "users", userId);
-    await setDoc(userRef, { faceData });
-    console.log("Face data stored successfully");
-  } catch (error) {
-    console.error("Error storing face data:", error);
-  }
-}
+// export async function registerUserFace(userId, faceData) {
+//   try {
+//     const userRef = doc(db, "users", userId);
+//     await setDoc(userRef, { faceData });
+//     console.log("Face data stored successfully");
+//   } catch (error) {
+//     console.error("Error storing face data:", error);
+//   }
+// }
 
 // Get stored face data for authentication
-export async function getUserFaceData(userId) {
-  try {
-    const userRef = doc(db, "users", userId);
-    const userDoc = await getDoc(userRef);
-    if (userDoc.exists()) {
-      return userDoc.data().faceData;
-    } else {
-      console.log("User not found");
-      return null;
-    }
-  } catch (error) {
-    console.error("Error fetching face data:", error);
-    return null;
-  }
-}
+// export async function getUserFaceData(userId) {
+//   try {
+//     const userRef = doc(db, "users", userId);
+//     const userDoc = await getDoc(userRef);
+//     if (userDoc.exists()) {
+//       return userDoc.data().faceData;
+//     } else {
+//       console.log("User not found");
+//       return null;
+//     }
+//   } catch (error) {
+//     console.error("Error fetching face data:", error);
+//     return null;
+//   }
+// }
 
 
 //🔹 Explanation:

@@ -1,8 +1,9 @@
 "use client";
 import { MdMenu } from "react-icons/md";
 import { LuSearch } from "react-icons/lu";
-import { FaUserEdit, FaSupple, FaSignOutAlt } from "react-icons/fa";
-import { IoSettingsOutline } from "react-icons/io5";
+import { FaUserEdit, FaSignOutAlt } from "react-icons/fa";
+// import { IoSettingsOutline } from "react-icons/io5";
+import { ref, getDownloadURL } from "firebase/storage";
 import { MdOutlineKeyboardArrowDown } from "react-icons/md";
 import { useEffect, useState } from "react";
 import { onAuthStateChanged, signOut } from "firebase/auth";
@@ -19,6 +20,7 @@ export default function Header({ setIsSidebarOpen }) {
   const [loading, setLoading] = useState(true); // change default to true
   const [loadingAuth, setLoadingAuth] = useState(true); // New state to track auth check
   const router = useRouter();
+  const [faceImage, setFaceImage] = useState("");
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -40,6 +42,20 @@ export default function Header({ setIsSidebarOpen }) {
           const userData = querySnapshot.docs[0].data();
           setUserName(userData.name || ""); // Ensure userData.name is a string
           setUserEmail(userData.email || "");
+         // Check Firestore for faceImage first
+          if (userData.faceImage) {
+            setFaceImage(userData.faceImage);
+          } else {
+            // If no image in Firestore, try fetching from Firebase Storage
+            const storageRef = ref(storage, `profile_pictures/${currentUser.uid}`);
+            try {
+              const url = await getDownloadURL(storageRef);
+              setFaceImage(url);
+            } catch (storageError) {
+              console.warn("No profile image found in Storage.");
+              setFaceImage(""); // Set to empty if no image is found
+            }
+          }
         }
       } catch (error) {
         console.error("Error fetching user data:", error);
@@ -84,13 +100,22 @@ export default function Header({ setIsSidebarOpen }) {
       />
       <div className="order-2 relative ml-5 md:ml-0">
         <div
-          className="flex flex-row items-center"
+          className="flex flex-row items-center gap-2"
           onClick={() => setDropdown(!dropdown)}
         >
+          {faceImage ? (
+            <img src={faceImage} alt="Profile" className="w-10 h-10 rounded-full" />
+          ) : (
+            <div className="profile-placeholder">Loading Image...</div>
+          )}
+
           <h2 className="text-lg font-avenir font-medium md:flex flex-row items-center gap-2 text-black cursor-pointer hidden">
             Welcome {userName}!
           </h2>
-          <MdOutlineKeyboardArrowDown color="black" className="cursor-pointer" />
+          <MdOutlineKeyboardArrowDown
+            color="black"
+            className="cursor-pointer md:text-[20px] text-[40px]"
+          />
         </div>
 
         <div

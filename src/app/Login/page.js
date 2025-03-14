@@ -3,9 +3,9 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import * as faceapi from "face-api.js";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, getDocs, query, where, getDoc, doc } from "firebase/firestore";
 import { BiLogIn } from "react-icons/bi";
 import Link from "next/link";
 
@@ -16,6 +16,7 @@ const [password, setPassword] = useState("");
 const [loading, setLoading] = useState(false);
 const [error, setError] = useState("");
 const [successMessage, setSuccessMessage] = useState("");
+const [currentUserRole, setCurrentUserRole] = useState(null);
 const videoRef = useRef(null);
 
 useEffect(() => {
@@ -28,6 +29,28 @@ useEffect(() => {
   });
   return () => unsubscribe();
 }, [router]);
+
+useEffect(() => {
+  const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      try {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          const role = userDoc.data().role;
+          setCurrentUserRole(role);
+          localStorage.setItem("userRole", role); // Store in localStorage
+        }
+      } catch (error) {
+        console.error("Error fetching user role:", error);
+      }
+    } else {
+      setCurrentUserRole(null);
+      localStorage.removeItem("userRole");
+    }
+  });
+
+  return () => unsubscribe();
+}, []);
 
 async function loadModels() {
   await Promise.all([
@@ -117,10 +140,32 @@ async function handleFaceLogin() {
 
   // Authenticate with Firebase
   try {
-    await signInWithEmailAndPassword(auth, email.trim(), password);
-    setSuccessMessage("Sign-in Successfully!")
+    const userCredential = await signInWithEmailAndPassword(
+      auth,
+      email.trim(),
+      password
+    );
+    const user = userCredential.user;
+
+    // Fetch User Role from Firestore (if not already set)
+    if (!currentUserRole) {
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      if (userDoc.exists()) {
+        const role = userDoc.data().role;
+        setCurrentUserRole(role);
+        localStorage.setItem("userRole", role);
+      }
+    }
+    console.log("user role:", role)
+
+    setSuccessMessage("Sign-in Successful!");
     stopCamera();
-    router.push("/dashboard");
+
+    // Redirect based on role
+    if (currentUserRole === "Manager") {
+      router.push("/dashboard");
+    } 
+
   } catch (err) {
     setError("Invalid email or password.");
   }

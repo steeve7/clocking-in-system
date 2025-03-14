@@ -1,9 +1,17 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
 import * as faceapi from "face-api.js";
-import { db, auth } from "@/lib/firebase";
-import { collection, getDocs, setDoc, doc } from "firebase/firestore";
+import { db, auth, storage } from "@/lib/firebase";
+import {
+  collection,
+  getDocs,
+  getDoc,
+  setDoc,
+  doc,
+  serverTimestamp,
+} from "firebase/firestore";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { BiLogIn } from "react-icons/bi";
 import { useRouter } from "next/navigation";
 import emailjs from "@emailjs/browser";
@@ -17,6 +25,7 @@ export default function SignUp() {
     role: "",
     location: "",
     signupDate: new Date().toISOString().split("T")[0], // Default to today's date
+    
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -25,6 +34,7 @@ export default function SignUp() {
   const canvasRef = useRef(null);
   const modelsLoaded = useRef(false);
   const detectionInterval = useRef(null);
+  const [currentUserRole, setCurrentUserRole] = useState(null);
   const router = useRouter();
   emailjs.init("abh7mLjaQox8Fuece");
 
@@ -211,8 +221,28 @@ const handleSignup = async (e) => {
     // Update user profile with name
     await updateProfile(user, { displayName: userData.name.trim() });
 
+    // Capture Face Image
+    const canvas = document.createElement("canvas");
+    canvas.width = videoRef.current.videoWidth;
+    canvas.height = videoRef.current.videoHeight;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+
+    // Convert Image to Blob
+    const blob = await new Promise((resolve) =>
+      canvas.toBlob(resolve, "image/jpeg")
+    );
+
+    // Upload Image to Firebase Storage
+    const storageRef = ref(storage, `profile_pictures/${user.uid}`);
+    await uploadBytes(storageRef, blob);
+    const imageUrl = await getDownloadURL(storageRef);
+
+    
+
     // Store user details in Firestore
-    await setDoc(doc(db, "users", user.email), {
+
+    await setDoc(doc(db, "users", user.uid), {
       uid: user.uid,
       name: userData.name.trim(),
       email: user.email,
@@ -220,33 +250,55 @@ const handleSignup = async (e) => {
       location: userData.location,
       signupDate: new Date().toISOString(),
       faceDescriptor: newFaceDescriptor.length ? newFaceDescriptor : null,
+      faceImage: imageUrl,
+      attendance: [
+        {
+          date: new Date().toISOString().split("T")[0], // Store today’s date
+          status: "Active",
+          timestamp: new Date().toISOString(), // Capture signup time
+        },
+      ],
+      createdAt: serverTimestamp(), // ✅ Firestore allows serverTimestamp() here
     });
 
     console.log("User successfully stored!");
     setSuccessMessage("Signup successful!");
 
     // Send Email Notification**
-   const templateParams = {
-  to_email: userData.email.trim(), //  Send email to the user who signed up
-  name: userData.name,
-  role: userData.role,
-  location:userData.location,
-  signupDate: new Date().toISOString().split("T")[0],
-};
+    const templateParams = {
+      to_email: userData.email.trim(), //  Send email to the user who signed up
+      name: userData.name,
+      role: userData.role,
+      location: userData.location,
+      signupDate: new Date().toISOString().split("T")[0],
+    };
 
-emailjs.send(
-  "service_sm5r8fj",  // Your actual Service ID
-  "template_x1l88yh", // Your actual Template ID
-  templateParams,     // Pass the correct object here
-  "abh7mLjaQox8Fuece"   // Your Public Key
-)
-.then((response) => {
-  console.log(" Email sent successfully to:", userData.email);
-})
-.catch((error) => {
-  console.error("Error sending email:", error);
-});
+    emailjs
+      .send(
+        "service_sm5r8fj", // Your actual Service ID
+        "template_x1l88yh", // Your actual Template ID
+        templateParams, // Pass the correct object here
+        "abh7mLjaQox8Fuece" // Your Public Key
+      )
+      .then((response) => {
+        console.log(" Email sent successfully to:", userData.email);
+      })
+      .catch((error) => {
+        console.error("Error sending email:", error);
+      });
 
+    //  Fetch role from Firestore immediately after signup**
+    const userDoc = await getDoc(doc(db, "users", user.uid));
+    if (userDoc.exists()) {
+      const fetchedRole = userDoc.data().role;
+      console.log("Fetched Role After Signup:", fetchedRole);
+      setCurrentUserRole(fetchedRole); // ✅ set global state
+    } else {
+      console.log("User role not found in Firestore.");
+    }
+
+    console.log("User UID:", user.uid);
+    console.log("Current User Role:", currentUserRole);
 
     // Clear input fields
     setUserData({
@@ -320,9 +372,10 @@ emailjs.send(
                     }}
                     className="md:w-[50%] w-full px-8 py-4 pr-5 rounded-lg font-medium bg-gray-100 border border-gray-200 placeholder-gray-500 text-sm focus:outline-none focus:border-gray-400 focus:bg-white mt-5"
                   >
+                    <option value="Select">Select</option>
                     <option value="Employee">Employee</option>
                     <option value="Manager">Manager</option>
-                    <option value="Student">Student</option>
+                    <option value="Administrator">Administrator</option>
                   </select>
                 </div>
                 <div className="flex md:flex-row flex-col items-center gap-2">

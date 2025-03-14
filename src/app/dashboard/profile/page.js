@@ -1,140 +1,170 @@
 'use client'
-
-import React, {useEffect, useState} from 'react';
-import { LuUserRound } from "react-icons/lu";
-import { BiLogoFacebook } from "react-icons/bi";
-import { FaLinkedinIn, FaXTwitter } from "react-icons/fa6";
-import { MdOutlineModeEditOutline } from "react-icons/md";
-import { onAuthStateChanged, signOut } from "firebase/auth";
-import { auth, db } from "@/lib/firebase";
-import { collection, getDocs, query, where } from "firebase/firestore";
-import { useRouter } from "next/navigation";
+import React, {useState} from 'react';
+import MetaProfile from '@/components/user-profile/MetaProfile';
+import UserProfile from '@/components/user-profile/UserProfile';
+import FooterProfile from '@/components/user-profile/FooterProfile';
+import MetaModal from '@/components/ui/MetaModal';
+import {MdClose} from 'react-icons/md'
 
 
 export default function page() {
-    const [userName, setUserName] = useState("");
-    const [userEmail, setUserEmail] = useState("");
-    const [userRole, setUserrole] = useState("");
-    const [user, setUser] = useState(null);
-    const [location, setLocation] = useState("");
-    const router = useRouter
+   const [modal, setModal] = useState(false);
 
-   useEffect(() => {
-     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-       if (!currentUser) {
-         router.replace("/Login"); // Redirect immediately
-         return;
-       }
-
-       setUser(currentUser);
-      //  setLoadingAuth(false); // Auth check is done
-
-       // Fetch user details from Firestore
-       try {
-         const userRef = collection(db, "users");
-         const q = query(userRef, where("uid", "==", currentUser.uid));
-         const querySnapshot = await getDocs(q);
-
-         if (!querySnapshot.empty) {
-           const userData = querySnapshot.docs[0].data();
-           setUserName(userData.name || ""); // Ensure userData.name is a string
-           setUserEmail(userData.email || "");
-           setUserrole(userData.role || "");
-           setLocation(userData.location || "");
-         }
-       } catch (error) {
-         console.error("Error fetching user data:", error);
-       }
-
-       setLoading(false);
-     });
-
-     return () => unsubscribe();
-   }, [router]);
-
-   if(!user){
-    return <p>Loading..</p>
-   }
-
+          const closeModal = () => {
+            setModal(false);
+          };
+  
   return (
-    <div className="bg-white md:h-[120vh] h-[190vh] w-full rounded-2xl md:px-10 px-5 py-10">
-      <h2 className="text-black font-bold font-avenir">Profile</h2>
-      <div className="border border-gray-300 mt-5 rounded-2xl flex md:flex-row flex-col justify-between items-center px-10 py-10">
-        <div className="flex md:flex-row flex-col gap-6 items-center md:mb-0 mb-5">
-          <span className="bg-gray-400 rounded-full px-6 py-6">
-            <LuUserRound />
-          </span>
-          <div className="flex flex-col md:items-start items-center">
-            <h2 className="text-black font-bold font-avenir">{userName}</h2>
-            <p className="text-black font-medium font-work">{userRole}</p>
-          </div>
-        </div>
-        <div className="flex md:flex-row flex-col gap-4">
-          <div className="flex flex-row items-center gap-2">
-            <span className="border border-gray-300 px-3 py-3 text-black rounded-full font-work">
-              <BiLogoFacebook size={20} />
-            </span>
-            <span className="border border-gray-300 px-3 py-3 text-black rounded-full font-work">
-              <FaLinkedinIn size={20} />
-            </span>
-            <span className="border border-gray-300 px-3 py-3 text-black rounded-full font-work">
-              <FaXTwitter size={20} />
-            </span>
-          </div>
-          <span className="flex flex-row items-center cursor-pointer justify-center font-work gap-2 text-black border border-gray-300 py-3 px-3 rounded-full">
-            <MdOutlineModeEditOutline />
-            Edit
-          </span>
-        </div>
+    <div>
+      <div
+        className={`bg-white md:h-[120vh] h-[190vh] w-full rounded-2xl md:px-10 px-5 py-10 ${
+          modal ? "blur-md" : ""
+        }`}
+      >
+        <h2 className="text-black font-bold font-avenir">Profile</h2>
+        <MetaProfile setModal={setModal} />
+        <UserProfile />
+        <FooterProfile />
       </div>
-      <div className="border border-gray-300 mt-5 rounded-2xl md:px-10 px-3 py-10">
-        <div className="flex flex-row justify-between items-center">
-          <h2 className="font-bold text-black font-avenir">Personal information</h2>
-          <span className="text-black font-work hidden cursor-pointer border border-gray-300 px-3 py-3 rounded-full md:flex flex-row items-center justify-center gap-2">
-            <MdOutlineModeEditOutline />
-            Edit
-          </span>
-        </div>
-        <div className="flex flex-col gap-6">
-          <div className="flex md:flex-row flex-col md:items-center items-start mt-5 gap-10">
-            <div className="">
-              <h2 className="font-bold text-black font-avenir">First Name</h2>
-              <p className="font-medium text-black font-workk">{userName}</p>
+
+      <MetaModal open={modal} close={closeModal}>
+        <div className="no-scrollbar relative mt-[-45rem] m-auto w-full max-w-[700px] overflow-y-auto rounded-3xl bg-white p-4 dark:bg-gray-900 lg:p-11">
+          <div className="px-2 pr-14">
+          <div className='flex justify-between items-center'>
+            <h4 className="mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
+              Edit Personal Information
+            </h4>
+            <MdClose color="white" size={30} onClick={closeModal} className='cursor-pointer'/>
+          </div>
+            
+            <p className="mb-6 text-sm text-gray-500 dark:text-gray-400 lg:mb-7">
+              Update your details to keep your profile up-to-date.
+            </p>
+          </div>
+          <form className="flex flex-col">
+            <div className="custom-scrollbar h-[450px] overflow-y-auto px-2 pb-3">
+              <div>
+                <h5 className="mb-5 text-lg font-medium text-gray-800 dark:text-white/90 lg:mb-6">
+                  Social Links
+                </h5>
+
+                <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                      Facebook
+                    </label>
+                    <input
+                      type="text"
+                      defaultValue=""
+                      className="h-11 w-full rounded-lg border appearance-none px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-hidden focus:ring-3 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                      X.com
+                    </label>
+                    <input
+                      type="text"
+                      defaultValue=""
+                      className="h-11 w-full rounded-lg border appearance-none px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-hidden focus:ring-3 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                      Linkedin
+                    </label>
+                    <input
+                      type="text"
+                      defaultValue=""
+                      className="h-11 w-full rounded-lg border appearance-none px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-hidden focus:ring-3 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="mt-7">
+                <h5 className="mb-5 text-lg font-medium text-gray-800 dark:text-white/90 lg:mb-6">
+                  Personal Information
+                </h5>
+
+                <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
+                  <div className="col-span-2 lg:col-span-1">
+                    <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                      Full Name
+                    </label>
+                    <input
+                      type="text"
+                      defaultValue=""
+                      className="h-11 w-full rounded-lg border appearance-none px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-hidden focus:ring-3 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                    />
+                  </div>
+
+                  <div className="col-span-2 lg:col-span-1">
+                    <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                      Email Address
+                    </label>
+                    <input
+                      type="text"
+                      defaultValue=""
+                      className="h-11 w-full rounded-lg border appearance-none px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-hidden focus:ring-3 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                    />
+                  </div>
+
+                  <div className="col-span-2 lg:col-span-1">
+                    <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                      Role
+                    </label>
+                    <input
+                      type="email"
+                      defaultValue=""
+                      className="h-11 w-full rounded-lg border appearance-none px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-hidden focus:ring-3 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                    />
+                  </div>
+
+                  <div className="col-span-2 lg:col-span-1">
+                    <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                      Home Address
+                    </label>
+                    <input
+                      type="text"
+                      defaultValue=""
+                      className="h-11 w-full rounded-lg border appearance-none px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-hidden focus:ring-3 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                    />
+                  </div>
+
+                  <div className="col-span-2">
+                    <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                      Country
+                    </label>
+                    <input
+                      type="text"
+                      defaultValue=""
+                      className="h-11 w-full rounded-lg border appearance-none px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-hidden focus:ring-3 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
-            <div>
-              <h2 className="font-bold text-black font-avenir">Email address</h2>
-              <p className="font-medium text-black font-work">
-                {userEmail}
-              </p>
+            <div className="flex items-center gap-3 px-2 mt-6 lg:justify-end">
+              <button
+                size="sm"
+                variant="outline"
+                onClick={closeModal}
+                className="border border-gray-400 px-4 py-4 rounded-2xl"
+              >
+                Close
+              </button>
+              <button
+                size="sm"
+                className="bg-green-500 text-white px-4 py-4 rounded-2xl"
+              >
+                Save Changes
+              </button>
             </div>
-          </div>
-          <div>
-            <h2 className="font-bold text-black font-avenir">Role</h2>
-            <p className="font-medium text-black font-work">{userRole}</p>
-          </div>
-          <span className="text-black cursor-pointer font-work border md:hidden border-gray-300 px-3 py-3 rounded-full flex flex-row items-center justify-center gap-2">
-            <MdOutlineModeEditOutline />
-            Edit
-          </span>
+          </form>
         </div>
-      </div>
-      <div className="border border-gray-300 mt-5 rounded-2xl px-10 py-5">
-        <div className="flex flex-row justify-between items-center md:mb-0 mb-5">
-          <h2 className="font-bold text-black font-avenir">Address</h2>
-          <span className="text-black font-work cursor-pointer border border-gray-300 px-3 py-3 rounded-full hidden md:flex flex-row items-center justify-center gap-2">
-            <MdOutlineModeEditOutline />
-            Edit
-          </span>
-        </div>
-        <div>
-          <h2 className="font-bold text-black font-avenir">Country</h2>
-          <p className="font-medium text-black font-work">{location}</p>
-        </div>
-        <span className="text-black mt-5 font-work md:mt-0 md:hidden cursor-pointer border border-gray-300 px-3 py-3 rounded-full flex flex-row items-center justify-center gap-2">
-          <MdOutlineModeEditOutline />
-          Edit
-        </span>
-      </div>
+      </MetaModal>
     </div>
   );
 }

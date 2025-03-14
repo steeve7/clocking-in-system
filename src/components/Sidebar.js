@@ -2,7 +2,6 @@
 import { MdClose } from "react-icons/md";
 import { FaUser, FaCalendarCheck } from "react-icons/fa";
 import { useRouter } from "next/navigation";
-// import { useState, useEffect } from "react";
 
 export default function Sidebar({ isSidebarOpen, setIsSidebarOpen }) {
   const router = useRouter()
@@ -16,6 +15,13 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen }) {
         router.push("/dashboard/profile");
       }
     };
+
+    // if (menuName === "User Profile" && userData.role === "manager") {
+    //   router.push("/dashboard/profile");
+    // } else {
+    //   router.push("/user-dashboard/profile");
+    // }
+
 
 
   return (

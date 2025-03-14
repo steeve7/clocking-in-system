@@ -2,39 +2,89 @@
 
 import { useState, useEffect } from "react";
 import { auth, db } from "@/lib/firebase";
-import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
+import { ref, getDownloadURL, getStorage } from "firebase/storage";
+import { collection, getDocs, doc, getDoc, deleteDoc } from "firebase/firestore";
 import { MdKeyboardArrowRight } from "react-icons/md";
 import Link from "next/link";
 
 export default function Dashboard() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("")
   const currentUser = auth.currentUser;
-  const [check, setCheck] = useState(false)
   const today = new Date().toISOString().split("T")[0]; // Format YYYY-MM-DD
+  const [currentUserRole, setCurrentUserRole] = useState(null);
+  const storage = getStorage();
 
+  // Fetch current user's role when component mounts
   useEffect(() => {
     if (!currentUser) return;
-    fetchUsers();
+    fetchUserRole();
   }, [currentUser]);
+
+  async function fetchUserRole() {
+    try {
+      const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+      if (userDoc.exists()) {
+        setCurrentUserRole(userDoc.data().role); // ✅ Store role in state
+      } else {
+        setCurrentUserRole("Employee"); // Default role
+      }
+    } catch (error) {
+      console.error("Error fetching user role:", error);
+    }
+  }
+
+
+   useEffect(() => {
+     if (currentUserRole) {
+       fetchUsers();
+     }
+   }, [currentUserRole]);
+
+
+  // console.log("Current User:", currentUser);
+  // console.log("Current User Roles:", currentUserRole);
 
   async function fetchUsers() {
     try {
       const userQuery = collection(db, "users");
       const querySnapshot = await getDocs(userQuery);
-      const userData = [];
+      let userData = [];
 
-      querySnapshot.forEach((doc) => {
+      for (const doc of querySnapshot.docs) {
         const data = doc.data();
+        const lastAttendanceRecord =
+          data.attendance?.[data.attendance.length - 1] || {};
+
+        let imageUrl = data.faceImage || ""; // Use Firestore image if available
+
+        // If no image in Firestore, try fetching from Firebase Storage
+        if (!imageUrl) {
+          try {
+            const storageRef = ref(storage, `profile_pictures/${doc.id}`);
+            imageUrl = await getDownloadURL(storageRef);
+          } catch (storageError) {
+            console.warn(`No profile image found for ${data.name}`);
+          }
+        }
+
         userData.push({
           id: doc.id,
           name: data.name,
           email: data.email,
           role: data.role,
-          status: data.lastAttendance === today, // Active only if attendance was marked today
-          lastAttendance: data.lastAttendance || "",
+          status: lastAttendanceRecord?.date === today, // Active only if attendance was marked today
+          lastAttendance: lastAttendanceRecord?.date || "No records",
+          faceImage: imageUrl, // Store each user’s image correctly
         });
-      });
+      }
+
+       // Filter users based on role
+      if (currentUserRole !== "Manager") {
+        userData = userData.filter((user) => user.id === currentUser.uid);
+      }
 
       setUsers(userData);
     } catch (error) {
@@ -42,24 +92,52 @@ export default function Dashboard() {
     } finally {
       setLoading(false);
     }
+    console.log("Fetching Users for Role:", currentUserRole);
   }
 
-  async function markAttendance(userId) {
-    try {
-      const userRef = doc(db, "users", userId);
-      await updateDoc(userRef, {
-        lastAttendance: today,
-      });
+  // async function markAttendance(userId) {
+  //   try {
+  //     const userRef = doc(db, "users", userId);
+  //     await updateDoc(userRef, {
+  //       attendance: arrayUnion({
+  //         date: today,
+  //         status: "Active",
+  //         timestamp: new Date(),
+  //       }),
+  //     });
 
-      setUsers((prevUsers) =>
-        prevUsers.map((user) =>
-          user.id === userId ? { ...user, status: true, lastAttendance: today } : user
-        )
-      );
+  //     setUsers((prevUsers) =>
+  //       prevUsers.map((user) =>
+  //         user.id === userId ? { ...user, status: true, lastAttendance: today } : user
+  //       )
+  //     );
+  //   } catch (error) {
+  //     console.error("Error marking attendance:", error);
+  //   }
+  // }
+
+  async function deleteUser(userId) {
+    if (!confirm("Are you sure you want to delete this user?")) return;
+
+    try {
+      await deleteDoc(doc(db, "users", userId));
+      setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));
+      setSuccess("User deleted successfully!");
     } catch (error) {
-      console.error("Error marking attendance:", error);
+      console.error("Error deleting user:", error);
+      setError("Failed to delete user.");
     }
   }
+
+  if (loading)
+    return (
+      <p className="text-black font-work font-bold">
+        Loading attendance records...
+      </p>
+    );
+
+    {error && <p className="text-red-500 font-work font-bold">{error}</p>}
+    {success && <p className="text-red-500 font-work font-bold"> User Deleted successfully!</p>}
 
   return (
     <div className="p-6">
@@ -99,15 +177,29 @@ export default function Dashboard() {
                 <th className="p-3 text-black font-avenir font-medium">
                   Last Attendance
                 </th>
-                <th className="p-3 text-black font-avenir font-medium">
-                  Status
-                </th>
+                <th className="p-3 text-black font-avenir font-medium">Date</th>
+                {currentUserRole && currentUserRole === "Manager" && (
+                  <th className="p-3 text-black font-avenir font-medium">
+                    Actions
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody>
               {users.map((user) => (
                 <tr key={user.id} className="border bg-white">
-                  <td className="p-3 text-black font-work font-normal">
+                  <td className="p-3 text-black font-work font-normal flex items-center">
+                    {user.faceImage ? (
+                      <img
+                        src={user.faceImage}
+                        alt="Profile"
+                        className="w-10 h-10 rounded-full mr-3"
+                      />
+                    ) : (
+                      <span className="profile-placeholder">
+                        Loading Image...
+                      </span>
+                    )}
                     {user.name}
                   </td>
                   <td className="p-3  text-black truncate max-w-xs font-work font-normal">
@@ -116,22 +208,22 @@ export default function Dashboard() {
                   <td className="p-3 text-black font-work font-normal">
                     {user.role}
                   </td>
+                  <td className="text-black font-work font-normal">
+                    {user.status ? "✅ Present" : "❌ Absent"}
+                  </td>
                   <td className="p-3  text-black font-work font-normal">
                     {user.lastAttendance || "Never"}
                   </td>
-                  <td className="p-3 text-center">
-                    <input
-                      type="checkbox"
-                      checked={user.status}
-                      onChange={() => markAttendance(user.id)}
-                      disabled={user.status}
-                      className="w-5 h-5 text-black"
-                      onClick={() => setCheck(!check)}
-                    />
-                    <span className="ml-2 text-black">
-                      {user.status ? "Active" : "Inactive"}
-                    </span>
-                  </td>
+                  {currentUserRole && currentUserRole === "Manager" && (
+                    <td className="p-3 text-black font-work font-normal">
+                      <button
+                        onClick={() => deleteUser(user.id)}
+                        className="text-white bg-red-500 px-3 py-1 rounded-md"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
