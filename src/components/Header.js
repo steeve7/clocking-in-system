@@ -25,7 +25,7 @@ export default function Header({ setIsSidebarOpen }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (!currentUser) {
-        router.replace("/login"); // Redirect immediately
+        router.replace("/Login"); // Redirect immediately
         return;
       }
 
@@ -68,7 +68,7 @@ export default function Header({ setIsSidebarOpen }) {
   }, [router]);
 
   if (!user && !loadingAuth) {
-    router.replace("/login");
+    router.replace("/Login");
     return null; // Prevent any rendering
   }
 
@@ -85,7 +85,7 @@ export default function Header({ setIsSidebarOpen }) {
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      router.replace("/login");
+      router.replace("/Login");
     } catch (error) {
       console.error("Logout Error:", error.message);
     }

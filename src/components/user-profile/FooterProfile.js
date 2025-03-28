@@ -18,7 +18,7 @@ export default function FooterProfile() {
                 auth,
                 async (currentUser) => {
                   if (!currentUser) {
-                    router.push("/login"); // Redirect immediately
+                    router.push("/Login"); // Redirect immediately
                     return;
                   }
 

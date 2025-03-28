@@ -18,7 +18,7 @@ export default function MetaProfile({setModal}) {
         useEffect(() => {
           const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
             if (!currentUser) {
-              router.push("/login"); // Redirect immediately
+              router.push("/Login"); // Redirect immediately
               return;
             }
 
