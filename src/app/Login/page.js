@@ -6,7 +6,7 @@ import { doc, getDoc, updateDoc, arrayUnion, setDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { FaSignInAlt } from "react-icons/fa";
 
-export default function page() {
+export default function Login() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
