@@ -181,8 +181,8 @@ const drawFaceBox = (detection) => {
     <div className="flex flex-col items-center mt-10">
       <h2 className="text-xl font-bold mb-4">Face Detection</h2>
       {error && <p className="text-red-500">{error}</p>}
-      {error && <p className="text-orange-500">{success}</p>}
-      <video ref={videoRef} autoPlay className="border rounded-md mb-4" />
+      {error && <p className="text-orange-500 text-[30px]">{success}</p>}
+      <video ref={videoRef} autoPlay className="border rounded-lg mb-4" />
       <canvas ref={canvasRef} style={{ display: "none" }} />
       <button
         onClick={captureFace}
