@@ -43,10 +43,6 @@ export default function Dashboard() {
      }
    }, [currentUserRole]);
 
-
-  // console.log("Current User:", currentUser);
-  // console.log("Current User Roles:", currentUserRole);
-
   async function fetchUsers() {
     try {
       const userQuery = collection(db, "users");
@@ -94,27 +90,6 @@ export default function Dashboard() {
     }
     console.log("Fetching Users for Role:", currentUserRole);
   }
-
-  // async function markAttendance(userId) {
-  //   try {
-  //     const userRef = doc(db, "users", userId);
-  //     await updateDoc(userRef, {
-  //       attendance: arrayUnion({
-  //         date: today,
-  //         status: "Active",
-  //         timestamp: new Date(),
-  //       }),
-  //     });
-
-  //     setUsers((prevUsers) =>
-  //       prevUsers.map((user) =>
-  //         user.id === userId ? { ...user, status: true, lastAttendance: today } : user
-  //       )
-  //     );
-  //   } catch (error) {
-  //     console.error("Error marking attendance:", error);
-  //   }
-  // }
 
   async function deleteUser(userId) {
     if (!confirm("Are you sure you want to delete this user?")) return;

@@ -12,17 +12,8 @@ export default function Hero() {
         <div className="flex flex-row justify-center items-center gap-4">
           <div className="flex flex-row items-center gap-2 border bg-white border-white text-blue-900 rounded-xl px-2 py-2 hover:transition ease-in-out">
             <FaUser />
-            <Link href={"/Login"} className="font-roboto font-bold text-[20px]">
+            <Link href={"/login"} className="font-roboto font-bold text-[20px]">
               Sign-In
-            </Link>
-          </div>
-          <div className="flex flex-row items-center gap-2 border border-white bg-transparent rounded-xl px-2 py-2  hover:transition ease-in-out">
-            <FaUser />
-            <Link
-              href={"/SignUp"}
-              className="font-roboto font-bold text-[20px]"
-            >
-              Sign-Up
             </Link>
           </div>
         </div>
@@ -30,7 +21,7 @@ export default function Hero() {
 
       <div className="flex lg:flex-row flex-col justify-center items-center py-20 w-full gap-10">
       <div className='lg:w-2/3 w-full'>
-      <p className="font-roboto font-bold lg:text-[50px] md:text-[30px] text-[20px]">
+      <p className="font-roboto font-bold lg:text-[50px] md:text-[30px] text-[20px] text-white">
           A smart clocking-in system using computer vision for face detection
           and recognition
         </p>

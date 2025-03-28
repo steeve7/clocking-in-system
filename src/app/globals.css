@@ -7,6 +7,18 @@
   --foreground: #171717;
 }
 
+:root{
+  --font-Euclid: "Euclid Circular A";
+  --font-Poppins: "Poppins";
+}
+
+.font-Euclid{
+  font-family: var(--font-Euclid);
+}
+.font-Poppins{
+  font-family: var(--font-Poppins);
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
@@ -14,8 +26,162 @@
   }
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+@font-face {
+  font-family: "Euclid Circular A";
+  src: url('/fonts/Euclid-Circular-A-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
 }
+
+/* Bold */
+@font-face {
+  font-family: "Euclid Circular A";
+  src: url('/fonts/Euclid-Circular-A-Bold.ttf') format('truetype');
+  font-weight: bold;
+  font-style: normal;
+}
+
+/* Italic */
+@font-face {
+  font-family: "Euclid Circular A";
+  src: url('/fonts/Euclid-Circular-A-Italic.ttf') format('truetype');
+  font-weight: normal;
+  font-style: italic;
+}
+
+/* Light */
+@font-face {
+  font-family: "Euclid Circular A";
+  src: url('/fonts/Euclid-Circular-A-Light.ttf') format('truetype');
+  font-weight: 300; /* Light weight */
+  font-style: normal;
+}
+
+/* Light Italic */
+@font-face {
+  font-family: "Euclid Circular A";
+  src: url('/fonts/Euclid-Circular-A-Light-Italic.ttf') format('truetype');
+  font-weight: 300; /* Light weight */
+  font-style: italic;
+}
+
+/* Medium */
+@font-face {
+  font-family: "Euclid Circular A";
+  src: url('/fonts/Euclid-Circular-A-Medium.ttf') format('truetype');
+  font-weight: 500; /* Medium weight */
+  font-style: normal;
+}
+@font-face {
+  font-family: "Euclid Circular A";
+  src: url('/fonts/Euclid-Circular-A-Medium-Italic.ttf') format('truetype');
+  font-weight: 500; /* Medium weight */
+  font-style: italic;
+}
+
+/* SemiBold */
+@font-face {
+  font-family: "Euclid Circular A";
+  src: url('/fonts/Euclid-Circular-A-SemiBold.ttf') format('truetype');
+  font-weight: 600; /* SemiBold weight */
+  font-style: normal;
+}
+
+/* SemiBold Italic */
+@font-face {
+  font-family: "Euclid Circular A";
+  src: url('/fonts/Euclid-Circular-A-SemiBold-Italic.ttf') format('truetype');
+  font-weight: 600; /* SemiBold weight */
+  font-style: italic;
+}
+
+/* Bold Italic */
+@font-face {
+  font-family: "Euclid Circular A";
+  src: url('/fonts/Euclid-Circular-A-Bold-Italic.ttf') format('truetype');
+  font-weight: bold;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "Poppins";
+  src: url('/fontsb/Poppins-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* Bold */
+@font-face {
+  font-family: "Poppins";
+  src: url('/fontsb/Poppins-Bold.ttf') format('truetype');
+  font-weight: bold;
+  font-style: normal;
+}
+
+/* Italic */
+@font-face {
+  font-family: "Poppins";
+  src: url('/fontsb/Poppins-Italic.ttf') format('truetype');
+  font-weight: normal;
+  font-style: italic;
+}
+
+/* Light */
+@font-face {
+  font-family: "Poppins";
+  src: url('/fontsb/Poppins-Light.ttf') format('truetype');
+  font-weight: 300; /* Light weight */
+  font-style: normal;
+}
+
+/* Light Italic */
+@font-face {
+  font-family: "Poppins";
+  src: url('/fontsb/Poppins-LightItalic.ttf') format('truetype');
+  font-weight: 300; /* Light weight */
+  font-style: italic;
+}
+
+/* Medium */
+@font-face {
+  font-family: "Poppins";
+  src: url('/fontsb/Poppins-Medium.ttf') format('truetype');
+  font-weight: 500; /* Medium weight */
+  font-style: normal;
+}
+@font-face {
+  font-family: "Poppins";
+  src: url('/fontsb/Poppins-MediumItalic.ttf') format('truetype');
+  font-weight: 500; /* Medium weight */
+  font-style: italic;
+}
+
+/* SemiBold */
+@font-face {
+  font-family: "Poppins";
+  src: url('/fontsb/Poppins-SemiBold.ttf') format('truetype');
+  font-weight: 600; /* SemiBold weight */
+  font-style: normal;
+}
+
+/* SemiBold Italic */
+@font-face {
+  font-family: "Poppins";
+  src: url('/fontsb/Poppins-SemiBoldItalic.ttf') format('truetype');
+  font-weight: 600; /* SemiBold weight */
+  font-style: italic;
+}
+
+/* Bold Italic */
+@font-face {
+  font-family: "Poppins";
+  src: url('/fontsb/Poppins-BoldItalic.ttf') format('truetype');
+  font-weight: bold;
+  font-style: italic;
+}
+
+
+
+
+
+

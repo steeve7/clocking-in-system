@@ -1,253 +1,154 @@
-"use client";
-
-import { useState, useRef, useEffect } from "react";
+'use client';
+import React, { useState, useEffect } from "react";
+import { auth, db } from "@/lib/firebase";; 
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { doc, getDoc, updateDoc, arrayUnion, setDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
-import * as faceapi from "face-api.js";
-import { signInWithEmailAndPassword, onAuthStateChanged } from "firebase/auth";
-import { auth, db } from "@/lib/firebase";
-import { collection, getDocs, query, where, getDoc, doc } from "firebase/firestore";
-import { BiLogIn } from "react-icons/bi";
-import Link from "next/link";
+import { FaSignInAlt } from "react-icons/fa";
 
-export default function Login() {
-const router = useRouter();
-const [email, setEmail] = useState("");
-const [password, setPassword] = useState("");
-const [loading, setLoading] = useState(false);
-const [error, setError] = useState("");
-const [successMessage, setSuccessMessage] = useState("");
-const [currentUserRole, setCurrentUserRole] = useState(null);
-const videoRef = useRef(null);
+export default function page() {
 
-useEffect(() => {
-  startCamera();
-  // Redirect to dashboard if already logged in
-  const unsubscribe = auth.onAuthStateChanged((user) => {
-    if (user) {
-      router.push("/dashboard");
-    }
-  });
-  return () => unsubscribe();
-}, [router]);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("")
+  const router = useRouter();
 
-useEffect(() => {
-  const unsubscribe = onAuthStateChanged(auth, async (user) => {
-    if (user) {
-      try {
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        if (userDoc.exists()) {
-          const role = userDoc.data().role;
-          setCurrentUserRole(role);
-          localStorage.setItem("userRole", role); // Store in localStorage
-        }
-      } catch (error) {
-        console.error("Error fetching user role:", error);
-      }
-    } else {
-      setCurrentUserRole(null);
-      localStorage.removeItem("userRole");
-    }
-  });
+const today = new Date().toISOString().split("T")[0];
 
-  return () => unsubscribe();
-}, []);
-
-async function loadModels() {
-  await Promise.all([
-    faceapi.nets.tinyFaceDetector.loadFromUri("/models"),
-    faceapi.nets.faceLandmark68Net.loadFromUri("/models"),
-    faceapi.nets.faceRecognitionNet.loadFromUri("/models"),
-  ]);
-}
-
-// async function startCamera() {
-//   try {
-//     const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-//     if (videoRef.current) {
-//       videoRef.current.srcObject = stream;
-//     }
-//   } catch (error) {
-//     setError("Camera access denied. Please grant permission.");
-//   }
-// }
-
- const startCamera = async () => {
-   if (videoRef.current?.srcObject) return; // Avoid re-starting
-   try {
-     const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-     videoRef.current.srcObject = stream;
-   } catch (error) {
-     setError("Error accessing camera. Please grant permission.");
-     console.error("Camera access error:", error);
-   }
- };
-
-function stopCamera() {
-  if (videoRef.current?.srcObject) {
-    videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
-    videoRef.current.srcObject = null;
-  }
-}
-
-async function handleFaceLogin() {
+async function handleLogin(e) {
+  e.preventDefault();
   setError("");
-  setLoading(true);
 
-  if (!videoRef.current) {
-    setError("No video feed detected.");
-    setLoading(false);
-    return;
-  }
-
-  await loadModels();
-
-  // Detect face from camera feed
-  const faceDetections = await faceapi
-    .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
-    .withFaceLandmarks()
-    .withFaceDescriptor();
-
-  if (!faceDetections) {
-    setError("No face detected. Try again.");
-    setLoading(false);
-    return;
-  }
-
-  // Fetch user details from Firestore
-  const userQuery = query(collection(db, "users"), where("email", "==", email));
-  const querySnapshot = await getDocs(userQuery);
-
-  if (querySnapshot.empty) {
-    setError("User not found. Please sign up.");
-    setLoading(false);
-    return;
-  }
-
-  const userData = querySnapshot.docs[0].data();
-  const storedFaceDescriptor = new Float32Array(userData.faceDescriptor);
-
-  // Compare detected face with stored face
-  const distance = faceapi.euclideanDistance(
-    faceDetections.descriptor,
-    storedFaceDescriptor
-  );
-
-  if (distance > 0.6) {
-    setError("Face does not match. Access denied.");
-    setLoading(false);
-    return;
-  }
-
-  // Authenticate with Firebase
   try {
     const userCredential = await signInWithEmailAndPassword(
       auth,
-      email.trim(),
+      email,
       password
     );
     const user = userCredential.user;
 
-    // Fetch User Role from Firestore (if not already set)
-    if (!currentUserRole) {
-      const userDoc = await getDoc(doc(db, "users", user.uid));
-      if (userDoc.exists()) {
-        const role = userDoc.data().role;
-        setCurrentUserRole(role);
-        localStorage.setItem("userRole", role);
+    // Fetch user role
+    const userDocRef = doc(db, "users", user.uid);
+    const userDoc = await getDoc(userDocRef);
+
+    if (userDoc.exists()) {
+      const userData = userDoc.data();
+      const role = userData.role?.toLowerCase(); // Normalize to lowercase
+
+      // ✅ Auto-mark attendance
+      await updateDoc(userDocRef, {
+        attendance: arrayUnion({
+          date: today,
+          status: "Active",
+          timestamp: new Date(),
+        }),
+      });
+
+      // ✅ Redirect based on role
+      if (role === "admin") {
+        setSuccess("Login successfully");
+        router.push("/admin");
+      } else if (role === "employee" || role === "manager") {
+        setSuccess("Login successfully");
+        router.push("/faceDetection");
+      } else {
+        setError("Unauthorized role.");
       }
+    } else {
+      setError("User data not found.");
     }
-    console.log("user role:", role)
-
-    setSuccessMessage("Sign-in Successful!");
-    stopCamera();
-
-    // Redirect based on role
-    if (currentUserRole === "Manager") {
-      router.push("/dashboard");
-    } 
-
-  } catch (err) {
+  } catch (error) {
+    console.error("Login Error:", error);
     setError("Invalid email or password.");
   }
-
-  setLoading(false);
 }
-
-
-  return (
-    <div className="min-h-screen bg-gray-100 text-gray-900 flex justify-center">
-      <div className="max-w-screen-xl m-0 sm:m-10 bg-white shadow sm:rounded-lg flex lg:flex-row flex-col justify-center flex-1">
-        <div className="lg:w-1/2 xl:w-5/12 p-6 sm:p-12">
-          <div className="mt-12 flex flex-col items-center">
-            <h1 className="text-2xl xl:text-3xl font-bold text-center font-roboto px-10">
-              Sign-in with Face Recognition
-            </h1>
-            <div className="w-full flex-1 mt-8">
-              <div className="mx-auto max-w-xs">
-                <input
-                  className="w-full px-8 py-4 rounded-lg font-medium bg-gray-100 border border-gray-200 placeholder-gray-500 text-sm focus:outline-none focus:border-gray-400 focus:bg-white"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Email"
-                  required
-                />
-                <input
-                  className="w-full px-8 py-4 rounded-lg font-medium bg-gray-100 border border-gray-200 placeholder-gray-500 text-sm focus:outline-none focus:border-gray-400 focus:bg-white mt-5"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Password"
-                  required
-                />
-
-                <button
-                  type="submit"
-                  onClick={handleFaceLogin}
-                  disabled={loading}
-                  className="mt-5 tracking-wide font-semibold bg-indigo-500 text-gray-100 w-full py-4 rounded-lg hover:bg-indigo-700 transition-all duration-300 ease-in-out flex flex-row gap-2 items-center justify-center focus:shadow-outline focus:outline-none"
-                >
-                  <BiLogIn />
-                  {loading ? "Processing..." : "Login with Face"}
-                </button>
-                <div className="flex flex-col justify-center items-center mt-5 w-full">
-                  <p>Don't have an account?</p>
-                  <Link
-                    href={"/SignUp"}
-                    className="mt-5 tracking-wide font-semibold text-blue-200 transition-all duration-300 ease-in-out"
-                  >
-                    Get started
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Show video feed only if client-side */}
-        <div className="flex-1 bg-indigo-100 flex">
-          <div className="m-12 xl:m-16 w-full">
-            {error && (
-              <p className="text-red-500 font-roboto font-bold mb-3 w-full">
-                {error}
-              </p>
-            )}
-            {successMessage && (
-              <p className="text-green-500 font-roboto font-bold w-full">
-                {successMessage}
-              </p>
-            )}
-            <video
-              ref={videoRef}
-              autoPlay
-              muted
-              width="800"
-              height="800"
-              className="rounded-2xl"
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+   return (
+     <div>
+       <div className="contain py-16">
+         <div className="max-w-lg mx-auto shadow px-6 py-7 rounded overflow-hidden">
+           {error && <p style={{ color: "red" }}>{error}</p>}
+           {success && <p className="text-orange-500">{success}</p>}
+           <h2 className="text-2xl uppercase font-medium mb-1 font-Euclid">
+             Login
+           </h2>
+           <p className="text-gray-600 mb-6 text-sm font-normal font-Poppins">
+             Welcome! So good to have you back!
+           </p>
+           <form autoComplete="off" onSubmit={handleLogin}>
+             <p className="text-red-500"></p>
+             <div className="space-y-2">
+               <div>
+                 <label
+                   htmlFor="email"
+                   className="text-gray-600 mb-2 block font-Euclid font-medium"
+                 >
+                   Email address
+                 </label>
+                 <input
+                   type="email"
+                   name="email"
+                   id="email"
+                   className="block w-full border border-gray-300 px-4 py-3 text-gray-600 text-sm rounded focus:ring-0 focus:border-teal-500 placeholder-gray-400 placeholder:font-normal placeholder:font-Poppins"
+                   placeholder="Email"
+                   value={email}
+                   onChange={(e) => setEmail(e.target.value)}
+                   required
+                 />
+               </div>
+             </div>
+             <div className="space-y-2 mt-5">
+               <div>
+                 <label
+                   htmlFor="password"
+                   className="text-gray-600 mb-2 block font-medium font-Euclid"
+                 >
+                   Password
+                 </label>
+                 <div className="relative">
+                   <input
+                     type="password"
+                     name="password"
+                     id="password"
+                     className="block w-full border border-gray-300 px-4 py-3 text-gray-600 text-sm rounded focus:ring-0 focus:border-teal-500 placeholder-gray-400 placeholder:font-normal placeholder:font-Poppins"
+                     placeholder="Password"
+                     value={password}
+                     onChange={(e) => setPassword(e.target.value)}
+                     required
+                   />
+                   <div className="cursor-pointer absolute inset-y-0 right-0 flex items-center px-8 text-gray-600 border-l border-gray-300">
+                     <svg
+                       xmlns="http://www.w3.org/2000/svg"
+                       fill="none"
+                       viewBox="0 0 24 24"
+                       strokeWidth="1.5"
+                       stroke="currentColor"
+                       className="w-5 h-5"
+                     >
+                       <path
+                         strokeLinecap="round"
+                         strokeLinejoin="round"
+                         d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
+                       ></path>
+                       <path
+                         strokeLinecap="round"
+                         strokeLinejoin="round"
+                         d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                       ></path>
+                     </svg>
+                   </div>
+                 </div>
+               </div>
+             </div>
+             <div className="mt-5 flex flex-row justify-center items-center gap-2 py-2 px-2 w-full rounded-lg bg-gray-500">
+               <FaSignInAlt color="white" />
+               <button className="text-white font-normal font-Poppins">
+                 Login
+               </button>
+             </div>
+           </form>
+         </div>
+       </div>
+     </div>
+   );
+};
