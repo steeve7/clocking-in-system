@@ -145,13 +145,6 @@ export default function AdminProfile() {
     }
   };
 
-  useEffect(() => {
-    if (success) {
-      const timer = setTimeout(() => setSuccess(""), 3000); // Auto-clear message
-      return () => clearTimeout(timer);
-    }
-  }, [success]);
-
   return (
     <div className="min-h-screen p-6 bg-gray-100 flex items-center justify-center">
       <div className="container max-w-screen-lg mx-auto">
