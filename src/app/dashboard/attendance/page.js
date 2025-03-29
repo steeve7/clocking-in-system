@@ -3,7 +3,14 @@
 import { useState, useEffect } from "react";
 import { auth, db } from "@/lib/firebase";
 import { ref, getDownloadURL, getStorage } from "firebase/storage";
-import { collection, getDocs, doc, getDoc, deleteDoc } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  doc,
+  getDoc,
+  deleteDoc,
+  setDoc,
+} from "firebase/firestore";
 import { MdKeyboardArrowRight } from "react-icons/md";
 import Link from "next/link";
 
@@ -11,23 +18,24 @@ export default function Dashboard() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("")
+  const [success, setSuccess] = useState("");
   const currentUser = auth.currentUser;
-  const today = new Date().toISOString().split("T")[0]; // Format YYYY-MM-DD
+  const todayDate = new Date().toISOString().split("T")[0]; // Format YYYY-MM-DD
   const [currentUserRole, setCurrentUserRole] = useState(null);
   const storage = getStorage();
 
-  // Fetch current user's role when component mounts
   useEffect(() => {
     if (!currentUser) return;
     fetchUserRole();
   }, [currentUser]);
 
   async function fetchUserRole() {
+    if (!currentUser) return;
+
     try {
       const userDoc = await getDoc(doc(db, "users", currentUser.uid));
       if (userDoc.exists()) {
-        setCurrentUserRole(userDoc.data().role); // ✅ Store role in state
+        setCurrentUserRole(userDoc.data().role);
       } else {
         setCurrentUserRole("Employee"); // Default role
       }
@@ -36,12 +44,11 @@ export default function Dashboard() {
     }
   }
 
-
-   useEffect(() => {
-     if (currentUserRole) {
-       fetchUsers();
-     }
-   }, [currentUserRole]);
+  useEffect(() => {
+    if (currentUserRole !== null) {
+      fetchUsers();
+    }
+  }, [currentUserRole]);
 
   async function fetchUsers() {
     try {
@@ -51,12 +58,20 @@ export default function Dashboard() {
 
       for (const doc of querySnapshot.docs) {
         const data = doc.data();
+        const attendanceRecords = Array.isArray(data.attendance)
+          ? data.attendance
+          : [];
+
+        // Find the most recent attendance record
         const lastAttendanceRecord =
-          data.attendance?.[data.attendance.length - 1] || {};
+          attendanceRecords.length > 0
+            ? attendanceRecords[attendanceRecords.length - 1]
+            : null;
 
-        let imageUrl = data.faceImage || ""; // Use Firestore image if available
+        const lastAttendanceDate = lastAttendanceRecord?.date || "No records";
+        const lastAttendanceTime = lastAttendanceRecord?.time || "N/A";
 
-        // If no image in Firestore, try fetching from Firebase Storage
+        let imageUrl = data.faceImage || "";
         if (!imageUrl) {
           try {
             const storageRef = ref(storage, `profile_pictures/${doc.id}`);
@@ -71,15 +86,11 @@ export default function Dashboard() {
           name: data.name,
           email: data.email,
           role: data.role,
-          status: lastAttendanceRecord?.date === today, // Active only if attendance was marked today
-          lastAttendance: lastAttendanceRecord?.date || "No records",
-          faceImage: imageUrl, // Store each user’s image correctly
+          status: lastAttendanceDate === todayDate ? "✅ Present" : "❌ Absent",
+          lastAttendance: lastAttendanceDate,
+          lastAttendanceTime: lastAttendanceTime,
+          faceImage: imageUrl,
         });
-      }
-
-       // Filter users based on role
-      if (currentUserRole !== "Manager") {
-        userData = userData.filter((user) => user.id === currentUser.uid);
       }
 
       setUsers(userData);
@@ -88,8 +99,51 @@ export default function Dashboard() {
     } finally {
       setLoading(false);
     }
-    console.log("Fetching Users for Role:", currentUserRole);
   }
+
+  async function markAttendance(userId) {
+    const now = new Date();
+    const currentTime = now.toLocaleTimeString();
+
+    try {
+      const userRef = doc(db, "users", userId);
+      const userDoc = await getDoc(userRef);
+
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        const attendanceRecords = userData.attendance || [];
+
+        // Check if user has already logged in today
+        if (attendanceRecords.some((record) => record.date === todayDate)) {
+          console.log("Attendance already marked for today.");
+          return;
+        }
+
+        // Add today's attendance
+        const updatedAttendance = [
+          ...attendanceRecords,
+          { date: todayDate, time: currentTime },
+        ];
+
+        await setDoc(
+          userRef,
+          { attendance: updatedAttendance },
+          { merge: true }
+        );
+
+        console.log("Attendance marked successfully!");
+        fetchUsers(); // Refresh data after marking attendance
+      }
+    } catch (error) {
+      console.error("Error marking attendance:", error);
+    }
+  }
+
+  useEffect(() => {
+    if (currentUser) {
+      markAttendance(currentUser.uid);
+    }
+  }, [currentUser]);
 
   async function deleteUser(userId) {
     if (!confirm("Are you sure you want to delete this user?")) return;
@@ -110,9 +164,6 @@ export default function Dashboard() {
         Loading attendance records...
       </p>
     );
-
-    {error && <p className="text-red-500 font-work font-bold">{error}</p>}
-    {success && <p className="text-red-500 font-work font-bold"> User Deleted successfully!</p>}
 
   return (
     <div className="p-6">
@@ -141,6 +192,10 @@ export default function Dashboard() {
         <p className="text-center">Loading...</p>
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-grey-300">
+          {error && <p className="text-red-500 font-work font-bold">{error}</p>}
+          {success && (
+            <p className="text-red-500 font-work font-bold">{success}</p>
+          )}
           <table className="min-w-full border-collapse">
             <thead className="bg-white">
               <tr className="text-left">
@@ -153,7 +208,8 @@ export default function Dashboard() {
                   Last Attendance
                 </th>
                 <th className="p-3 text-black font-avenir font-medium">Date</th>
-                {currentUserRole && currentUserRole === "Manager" && (
+                <th className="p-3 text-black font-avenir font-medium">Time</th>
+                {currentUserRole === "Manager" && (
                   <th className="p-3 text-black font-avenir font-medium">
                     Actions
                   </th>
@@ -171,25 +227,26 @@ export default function Dashboard() {
                         className="w-10 h-10 rounded-full mr-3"
                       />
                     ) : (
-                      <span className="profile-placeholder">
-                        Loading Image...
-                      </span>
+                      "No Image"
                     )}
                     {user.name}
                   </td>
-                  <td className="p-3  text-black truncate max-w-xs font-work font-normal">
+                  <td className="p-3 text-black font-work font-normal">
                     {user.email}
                   </td>
                   <td className="p-3 text-black font-work font-normal">
                     {user.role}
                   </td>
-                  <td className="text-black font-work font-normal">
-                    {user.status ? "✅ Present" : "❌ Absent"}
+                  <td className="p-3 text-black font-work font-normal">
+                    {user.status}
                   </td>
-                  <td className="p-3  text-black font-work font-normal">
-                    {user.lastAttendance || "Never"}
+                  <td className="p-3 text-black font-work font-normal">
+                    {user.lastAttendance}
                   </td>
-                  {currentUserRole && currentUserRole === "Manager" && (
+                  <td className="p-3 text-black font-work font-normal">
+                    {user.lastAttendanceTime}
+                  </td>
+                  {currentUserRole === "Manager" && (
                     <td className="p-3 text-black font-work font-normal">
                       <button
                         onClick={() => deleteUser(user.id)}

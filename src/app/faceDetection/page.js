@@ -25,7 +25,7 @@ const loadModels = async () => {
     faceapi.nets.faceLandmark68Net.loadFromUri("/models"),
     faceapi.nets.faceRecognitionNet.loadFromUri("/models"),
   ]);
-  console.log("✅ Face API models loaded.");
+  // console.log(" Face API models loaded.");
 };
 
 const startCamera = async () => {
@@ -33,7 +33,7 @@ const startCamera = async () => {
     const stream = await navigator.mediaDevices.getUserMedia({ video: true });
     videoRef.current.srcObject = stream;
   } catch (error) {
-    console.error("🔥 Camera access error:", error);
+    // console.error(" Camera access error:", error);
     setError("Please allow camera access.");
   }
 };
@@ -69,7 +69,7 @@ const captureFace = async () => {
     return;
   }
 
-  setSuccess("✅ Face detected!");
+  setSuccess("Face detected!");
 
   // Draw a square around the face
   drawFaceBox(detection);
@@ -112,8 +112,8 @@ const captureFace = async () => {
           setLoading(false);
           return;
         } else {
-          // ✅ Face is recognized and belongs to the same role, allow login
-          setSuccess("✅ Face recognized. Logging in...");
+          // Face is recognized and belongs to the same role, allow login
+          setSuccess("Face recognized. Logging in...");
           stopCamera(); // Turn off camera
           setTimeout(() => router.push("/dashboard"), 1500);
           setLoading(false);
@@ -124,7 +124,7 @@ const captureFace = async () => {
   }
 
   // If face is not found, register it
-  setSuccess("✅ Face registered successfully!");
+  setSuccess("Face registered successfully!");
 
   // Capture face image
   const canvas = document.createElement("canvas");
@@ -143,7 +143,7 @@ const captureFace = async () => {
   await uploadBytes(storageRef, blob);
   const imageUrl = await getDownloadURL(storageRef);
 
-  console.log("✅ Face image uploaded:", imageUrl);
+  // console.log("Face image uploaded:", imageUrl);
 
   // Update Firestore with face data
   await updateDoc(userRef, {
@@ -151,7 +151,7 @@ const captureFace = async () => {
     faceImage: imageUrl,
   });
 
-  console.log("✅ Face data stored in Firestore!");
+  // console.log(" Face data stored in Firestore!");
 
   stopCamera(); // Turn off camera
   setTimeout(() => router.push("/dashboard"), 1500);
@@ -181,8 +181,8 @@ const drawFaceBox = (detection) => {
     <div className="flex flex-col items-center mt-10">
       <h2 className="text-xl font-bold mb-4">Face Detection</h2>
       {error && <p className="text-red-500">{error}</p>}
-      {error && <p className="text-orange-500">{success}</p>}
-      <video ref={videoRef} autoPlay className="border rounded-md mb-4" />
+      {error && <p className="text-orange-500 text-[30px]">{success}</p>}
+      <video ref={videoRef} autoPlay className="border rounded-lg mb-4" />
       <canvas ref={canvasRef} style={{ display: "none" }} />
       <button
         onClick={captureFace}

@@ -2,27 +2,48 @@
 import { MdClose } from "react-icons/md";
 import { FaUser, FaCalendarCheck } from "react-icons/fa";
 import { useRouter } from "next/navigation";
+import { SiGoogleanalytics } from "react-icons/si";
+import { useEffect, useState } from "react";
+import { auth, db } from "@/lib/firebase";
+import { doc, getDoc } from "firebase/firestore";
 
 export default function Sidebar({ isSidebarOpen, setIsSidebarOpen }) {
-  const router = useRouter()
+  const router = useRouter();
+  const [role, setRole] = useState("");
+  const [error, setError] = useState("");
 
-    const handleMenuClick = (menuName) => {
-     setIsSidebarOpen(false);
+ const [loading, setLoading] = useState(true); // Add loading state
 
-      if (menuName === "Attendance") {
-        router.push("/dashboard/attendance"); // Navigate to "dashboard/attendance"
-      } else if (menuName === "User Profile") {
-        router.push("/dashboard/profile");
-      }
-    };
+ useEffect(() => {
+   async function fetchUserRole() {
+     const user = auth.currentUser;
+     if (user) {
+       const userDoc = await getDoc(doc(db, "users", user.uid));
+       if (userDoc.exists()) {
+         setRole(userDoc.data().role);
+       }
+     }
+     setLoading(false); // Set loading to false after fetching role
+   }
+   fetchUserRole();
+ }, []);
 
-    // if (menuName === "User Profile" && userData.role === "manager") {
-    //   router.push("/dashboard/profile");
-    // } else {
-    //   router.push("/user-dashboard/profile");
-    // }
+ const handleMenuClick = (menuName) => {
+   setIsSidebarOpen(false);
 
-
+   if (menuName === "Attendance") {
+     router.push("/dashboard/attendance");
+   } else if (menuName === "User Profile") {
+     router.push("/dashboard/profile");
+   } else if (menuName === "Analysis") {
+     if (loading) return; //  Ensure role is loaded before checking
+     if (role === "Manager") {
+       router.push("/dashboard/analysis");
+     } else {
+       setError("Access denied: Only managers can view this page.");
+     }
+   }
+ };
 
   return (
     <div
@@ -40,20 +61,27 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen }) {
       </div>
 
       <div className="mt-6 space-y-2 pl-4">
+        {error && <p style={{ color: "red" }}>{error}</p>}
         <span className="font-work">Menu</span>
         {[
           { name: "User Profile", icon: <FaUser size={15} /> },
           { name: "Attendance", icon: <FaCalendarCheck size={20} /> },
-        ].map((menu) => (
-          <div
-            key={menu.name}
-            onClick={() => handleMenuClick(menu.name)}
-            className="flex items-start gap-2 p-2 pl-4 cursor-pointer rounded-md hover:bg-black hover:text-white"
-          >
-            <p>{menu.icon}</p>
-            <p className="font-medium font-avenir">{menu.name}</p>
-          </div>
-        ))}
+        ]
+          .concat(
+            role === "Manager"
+              ? [{ name: "Analysis", icon: <SiGoogleanalytics size={20} /> }]
+              : []
+          )
+          .map((menu) => (
+            <div
+              key={menu.name}
+              onClick={() => handleMenuClick(menu.name)}
+              className="flex items-start gap-2 p-2 pl-4 cursor-pointer rounded-md hover:bg-black hover:text-white"
+            >
+              <p>{menu.icon}</p>
+              <p className="font-medium font-avenir">{menu.name}</p>
+            </div>
+          ))}
       </div>
     </div>
   );
