@@ -7,7 +7,7 @@ export default function Hero() {
     <header className="w-full lg:px-20 px-10 py-10 bg-blue-500 h-[100vh]">
       <div className="flex justify-between md:flex-row flex-col gap-10">
         <div className='flex md:justify-start justify-center'>
-          <h1 className="font-roboto font-bold text-[20px]">Test Project</h1>
+          <h1 className="font-roboto font-bold text-[20px] text-white">Test Project</h1>
         </div>
         <div className="flex flex-row justify-center items-center gap-4">
           <div className="flex flex-row items-center gap-2 border bg-white border-white text-blue-900 rounded-xl px-2 py-2 hover:transition ease-in-out">
