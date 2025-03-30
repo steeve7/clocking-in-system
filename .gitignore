@@ -40,5 +40,13 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-src/firebase-admin/smart-clocking-system-firebase-adminsdk-xxxx.json
+echo "src/firebase-admin/smart-clocking-system-c5d2d9e86e07.json" >> .gitignore
+
+**DO NOT PUSH `.env` TO GITHUB!**  
+Add this to `.gitignore` if not already there:
+
+src/firebase-admin/*.json
+
+GOOGLE_APPLICATION_CREDENTIALS
+
 
