@@ -22,6 +22,9 @@ export default function Dashboard() {
   const currentUser = auth.currentUser;
   const todayDate = new Date().toISOString().split("T")[0]; // Format YYYY-MM-DD
   const [currentUserRole, setCurrentUserRole] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(""); // Stores selected date
+  const [filteredAttendance, setFilteredAttendance] = useState(null); // Stores attendance for the selected date
+
   const storage = getStorage();
 
   useEffect(() => {
@@ -50,95 +53,112 @@ export default function Dashboard() {
     }
   }, [currentUserRole]);
 
- async function fetchUsers() {
-   try {
-     const userQuery = collection(db, "users");
-     const querySnapshot = await getDocs(userQuery);
-     let userData = [];
-
-     for (const doc of querySnapshot.docs) {
-       const data = doc.data();
-       const attendanceRecords = Array.isArray(data.attendance)
-         ? data.attendance
-         : [];
-
-       // Find the most recent attendance record
-       const lastAttendanceRecord =
-         attendanceRecords.length > 0
-           ? attendanceRecords[attendanceRecords.length - 1]
-           : null;
-
-       // Ensure lastAttendanceTime is correctly extracted
-       const lastAttendanceDate = lastAttendanceRecord?.date || "No records";
-       const lastAttendanceTime = lastAttendanceRecord?.time || "N";
-
-       let imageUrl = data.faceImage || "";
-       if (!imageUrl) {
-         try {
-           const storageRef = ref(storage, `profile_pictures/${doc.id}`);
-           imageUrl = await getDownloadURL(storageRef);
-         } catch (storageError) {
-           console.warn(`No profile image found for ${data.name}`);
-         }
-       }
-
-       userData.push({
-         id: doc.id,
-         name: data.name,
-         email: data.email,
-         role: data.role,
-         status: lastAttendanceDate === todayDate ? "✅ Present" : "❌ Absent",
-         lastAttendance: lastAttendanceDate,
-         lastAttendanceTime: lastAttendanceTime, // Ensure correct time is displayed
-         faceImage: imageUrl,
-       });
-     }
-
-     setUsers(userData);
-   } catch (error) {
-     console.error("Error fetching users:", error);
-   } finally {
-     setLoading(false);
-   }
- }
-
-
-async function markAttendance(userId) {
-  const now = new Date();
-  const currentTime = now.toLocaleTimeString();
-
+async function fetchUsers() {
   try {
-    const userRef = doc(db, "users", userId);
-    const userDoc = await getDoc(userRef);
+    if (!currentUser || !currentUserRole) return;
 
-    if (userDoc.exists()) {
-      const userData = userDoc.data();
-      let attendanceRecords = userData.attendance || [];
+    const userQuery = collection(db, "users");
+    const querySnapshot = await getDocs(userQuery);
+    let userData = [];
 
-      // Check if user already has an attendance record for today
-      const todayIndex = attendanceRecords.findIndex(
-        (record) => record.date === todayDate
+    for (const doc of querySnapshot.docs) {
+      const data = doc.data();
+      const attendanceRecords = Array.isArray(data.attendance)
+        ? data.attendance
+        : [];
+
+      // 🔹 Find attendance for the selected date (if set)
+      const selectedAttendanceRecord = attendanceRecords.find(
+        (record) => record.date === selectedDate
       );
+      const isPresentOnSelectedDate = selectedAttendanceRecord
+        ? "✅ Present"
+        : "❌ Absent";
 
-      if (todayIndex === -1) {
-        // If no record for today, create a new one
-        attendanceRecords.push({ date: todayDate, time: currentTime });
+      // 🔹 Find the most recent attendance record
+      const lastAttendanceRecord =
+        attendanceRecords.length > 0
+          ? attendanceRecords[attendanceRecords.length - 1]
+          : null;
+      const lastAttendanceDate = lastAttendanceRecord?.date || "No records";
+      const lastAttendanceTime = lastAttendanceRecord?.time || "N/A";
 
-        // Update Firestore only if it's a new attendance record
-        await setDoc(
-          userRef,
-          { attendance: attendanceRecords },
-          { merge: true }
-        );
+      let imageUrl = data.faceImage || "";
+      if (!imageUrl) {
+        try {
+          const storageRef = ref(storage, `profile_pictures/${doc.id}`);
+          imageUrl = await getDownloadURL(storageRef);
+        } catch (storageError) {
+          console.warn(`No profile image found for ${data.name}`);
+        }
+      }
 
-        console.log("Attendance marked successfully!");
-        fetchUsers(); // Refresh UI
+      const userEntry = {
+        id: doc.id,
+        name: data.name,
+        email: data.email,
+        role: data.role,
+        lastAttendance: lastAttendanceDate,
+        lastAttendanceTime: lastAttendanceTime,
+        faceImage: imageUrl,
+        status: selectedDate
+          ? isPresentOnSelectedDate
+          : lastAttendanceDate === todayDate
+          ? "✅ Present"
+          : "❌ Absent",
+      };
+
+      // 🔹 If Manager → See all users, If Employee → See only themselves
+      if (currentUserRole === "Manager" || doc.id === currentUser.uid) {
+        userData.push(userEntry);
       }
     }
+
+    setUsers(userData);
   } catch (error) {
-    console.error("Error marking attendance:", error);
+    console.error("Error fetching users:", error);
+  } finally {
+    setLoading(false);
   }
 }
+
+
+  async function markAttendance(userId) {
+    const now = new Date();
+    const currentTime = now.toLocaleTimeString();
+
+    try {
+      const userRef = doc(db, "users", userId);
+      const userDoc = await getDoc(userRef);
+
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        let attendanceRecords = userData.attendance || [];
+
+        // Check if user already has an attendance record for today
+        const todayIndex = attendanceRecords.findIndex(
+          (record) => record.date === todayDate
+        );
+
+        if (todayIndex === -1) {
+          // If no record for today, create a new one
+          attendanceRecords.push({ date: todayDate, time: currentTime });
+
+          // Update Firestore only if it's a new attendance record
+          await setDoc(
+            userRef,
+            { attendance: attendanceRecords },
+            { merge: true }
+          );
+
+          console.log("Attendance marked successfully!");
+          fetchUsers(); // Refresh UI
+        }
+      }
+    } catch (error) {
+      console.error("Error marking attendance:", error);
+    }
+  }
 
   useEffect(() => {
     if (currentUser) {
@@ -167,7 +187,25 @@ async function markAttendance(userId) {
     );
 
   return (
-    <div className="p-6">
+    <div className="w-full">
+      {/* Date Picker for Employees */}
+      {currentUserRole === "Employee" && (
+        <div className="mb-4 flex flex-col justify-start items-start ">
+          <label htmlFor="attendanceDate" className="font-bold text-black font-avenir mb-3">
+            Check attendance
+          </label>
+          <input
+            type="date"
+            id="attendanceDate"
+            className="border p-2 rounded-md"
+            value={selectedDate}
+            onChange={(e) => {
+              setSelectedDate(e.target.value);
+              fetchUsers(); // Re-fetch data when date changes
+            }}
+          />
+        </div>
+      )}
       <div className="flex md:flex-row flex-col justify-between md:items-center items-start mb-3">
         <h1 className="font-bold text-center md:mb-0 mb-2 text-black font-avenir">
           Attendance Table

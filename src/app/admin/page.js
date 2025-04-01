@@ -36,7 +36,7 @@ export default function page() {
    <AdminProfile />
  ) : (
    <p className="flex justify-center items-center font-Poppins text-black py-20">
-     Access Denied
+     User Created successfully
    </p>
  );
 

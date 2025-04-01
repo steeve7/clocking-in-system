@@ -25,125 +25,100 @@ export default function AdminProfile() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  // useEffect(() => {
+  //   if (success) {
+  //     const timer = setTimeout(() => setSuccess(""), 5000);
+  //     return () => clearTimeout(timer);
+  //   }
+  // }, [success]);
+
   // Handle form input change
   const handleChange = (e) => {
     setUserData({ ...userData, [e.target.name]: e.target.value });
   };
 
   const handleCreateUser = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    // Validate user input
-    if (
-      !userData.name ||
-      !userData.email ||
-      !userData.password ||
-      !userData.role ||
-      !userData.location ||
-      !userData.address ||
-      !userData.state ||
-      !userData.zip
-    ) {
-      setError("All fields are required.");
-      setLoading(false);
-      return;
-    }
+  if (
+    !userData.name ||
+    !userData.email ||
+    !userData.password ||
+    !userData.role ||
+    !userData.location ||
+    !userData.address ||
+    !userData.state ||
+    !userData.zip
+  ) {
+    setError("All fields are required.");
+    return;
+  }
 
-    if (userData.password.length < 6) {
-      setError("Password must be at least 6 characters long.");
-      setLoading(false);
-      return;
-    }
+  if (userData.password.length < 6) {
+    setError("Password must be at least 6 characters long.");
+    return;
+  }
 
-    // Store the current admin's credentials
-    const currentAdmin = auth.currentUser;
-    const adminEmail = currentAdmin?.email;
-    const adminPassword = prompt(
-      "Please enter your admin password to stay logged in:"
+  // Store admin credentials before creating the new user
+  const currentAdmin = auth.currentUser;
+  const adminEmail = currentAdmin?.email;
+  const adminPassword = prompt(
+    "Please enter your admin password to stay logged in:"
+  );
+
+  if (!adminPassword) {
+    setError("Admin authentication required.");
+    return;
+  }
+
+  try {
+    const userCredential = await createUserWithEmailAndPassword(
+      auth,
+      userData.email,
+      userData.password
     );
+    const user = userCredential.user;
 
-    if (!adminPassword) {
-      setError("Admin authentication required.");
-      return;
-    }
+    await updateProfile(user, { displayName: userData.name.trim() });
 
-    try {
-      // Create the new user but DO NOT sign them in
-      const tempAuth = getAuth();
-      const userCredential = await createUserWithEmailAndPassword(
-        tempAuth,
-        userData.email,
-        userData.password
-      );
-      const user = userCredential.user;
+    await setDoc(doc(db, "users", user.uid), {
+      uid: user.uid,
+      name: userData.name.trim(),
+      email: user.email,
+      role: userData.role,
+      location: userData.location,
+      address: userData.address,
+      state: userData.state,
+      zip: userData.zip,
+      createdAt: serverTimestamp(),
+    });
 
-      // Update user profile with name
-      await updateProfile(user, { displayName: userData.name.trim() });
+    // ✅ Store success message in local storage before logging out
+    localStorage.setItem("successMessage", "User Created Successfully!");
 
-      // Store additional user details in Firestore
-      await setDoc(doc(db, "users", user.uid), {
-        uid: user.uid,
-        name: userData.name.trim(),
-        email: user.email,
-        role: userData.role,
-        location: userData.location,
-        address: userData.address,
-        state: userData.state,
-        zip: userData.zip,
-        createdAt: serverTimestamp(),
-      });
+    // ✅ Log out new user & restore admin session after a delay
+    setTimeout(async () => {
+      await signOut(auth);
+      console.log("New user logged out");
 
-      // Log for debugging
-      setSuccess("User created successfully!");
-      console.log("User successfully created in Firestore");
-      // setSuccess("User created successfully!");
-
-      // Sign out the temporary user to prevent access issues
-      await signOut(tempAuth);
-
-      // Re-authenticate the admin user
       await signInWithEmailAndPassword(auth, adminEmail, adminPassword);
+      console.log("Admin session restored.");
+    }, 3000); // ⏳ 3s delay before logging out
 
-       setSuccess("User created successfully! Admin session restored.");
-       console.log("Admin session restored.");
-
-      const templateParams = {
-        to_email: userData.email.trim(), //  Send email to the user who signed up
-        name: userData.name,
-        role: userData.role,
-        password: userData.password,
-        location: userData.location,
-        createdAt: serverTimestamp(),
-      };
-
-      emailjs
-        .send(
-          "service_sm5r8fj", // Your actual Service ID
-          "template_x1l88yh", // Your actual Template ID
-          templateParams, // Pass the correct object here
-          "abh7mLjaQox8Fuece" // Your Public Key
-        )
-        .then((response) => {
-          console.log(" Email sent successfully to:", userData.email);
-        })
-        .catch((error) => {
-          console.error("Error sending email:", error);
-        });
-
-      setUserData({
-        name: "",
-        email: "",
-        password: "",
-        role: "",
-        location: "",
-        address: "",
-        state: "",
-        zip: "",
-      });
-    } catch (error) {
-      setError("Error creating user: " + error.message);
-    }
-  };
+    setUserData({
+      name: "",
+      email: "",
+      password: "",
+      role: "",
+      location: "",
+      address: "",
+      state: "",
+      zip: "",
+    });
+  } catch (error) {
+    setError("Error creating user: " + error.message);
+  }
+};
 
   return (
     <div className="min-h-screen p-6 bg-gray-100 flex items-center justify-center">
@@ -153,7 +128,7 @@ export default function AdminProfile() {
             <div className="grid gap-4 gap-y-2 text-sm grid-cols-1 lg:grid-cols-3">
               <div className="text-gray-600">
                 {error && <p style={{ color: "red" }}>{error}</p>}
-                {success && <p className="text-orange-500">{success}</p>}
+                {success && <p className="text-orange-500 text-2xl">{success}</p>}
                 <p className="font-medium text-lg font-Euclid">Admin Page</p>
                 <p className="font-normal text-base font-Poppins">
                   Please fill out all the fields.
