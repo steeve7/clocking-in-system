@@ -25,7 +25,7 @@ const loadModels = async () => {
     faceapi.nets.faceLandmark68Net.loadFromUri("/models"),
     faceapi.nets.faceRecognitionNet.loadFromUri("/models"),
   ]);
-  console.log(" Face API models loaded.");
+  // console.log(" Face API models loaded.");
 };
 
 const startCamera = async () => {
@@ -94,8 +94,6 @@ const captureFace = async () => {
   const usersCollection = collection(db, "users");
   const querySnapshot = await getDocs(usersCollection);
 
-  let recognizedUser = null; // Track the recognized user
-
   for (const doc of querySnapshot.docs) {
     const data = doc.data();
     if (data.faceDescriptor) {
@@ -106,33 +104,24 @@ const captureFace = async () => {
       );
 
       if (distance < 0.5) {
-        recognizedUser = data; // Store the recognized user
-        break; // Stop checking once a match is found
+        // 0.5 is the threshold for face similarity
+        if (data.role !== role) {
+          setError(
+            "Face already registered under a different role. Please log in."
+          );
+          setLoading(false);
+          return;
+        } else {
+          // Face is recognized and belongs to the same role, allow login
+          setSuccess("Face recognized. Logging in...");
+          stopCamera(); // Turn off camera
+          setTimeout(() => router.push("/dashboard"), 1500);
+          setLoading(false);
+          return;
+        }
       }
     }
   }
-
-  // If a match is found, check if it belongs to the current user
-  if (recognizedUser) {
-    if (recognizedUser.uid !== user.uid) {
-      setError(
-        "Face detected but does not match this account. Please log in with the correct account."
-      );
-      setLoading(false);
-      return;
-    } else {
-      setSuccess("Face recognized. Logging in...");
-      stopCamera();
-      setTimeout(() => router.push("/dashboard"), 1500);
-      setLoading(false);
-      return;
-    }
-  }
-
-  // If no match is found, reject login instead of registering a new face
-  setError("Face not recognized. Please log in with your registered account.");
-  setLoading(false);
-  return;
 
   // If face is not found, register it
   setSuccess("Face registered successfully!");
