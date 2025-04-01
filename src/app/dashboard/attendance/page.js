@@ -115,30 +115,30 @@ async function markAttendance(userId) {
       const userData = userDoc.data();
       let attendanceRecords = userData.attendance || [];
 
-      // Check if user has already logged in today
+      // Check if user already has an attendance record for today
       const todayIndex = attendanceRecords.findIndex(
         (record) => record.date === todayDate
       );
 
-      if (todayIndex !== -1) {
-        // If attendance for today exists, update the time
-        attendanceRecords[todayIndex].time = currentTime;
-      } else {
-        // If not, add a new entry
+      if (todayIndex === -1) {
+        // If no record for today, create a new one
         attendanceRecords.push({ date: todayDate, time: currentTime });
+
+        // Update Firestore only if it's a new attendance record
+        await setDoc(
+          userRef,
+          { attendance: attendanceRecords },
+          { merge: true }
+        );
+
+        console.log("Attendance marked successfully!");
+        fetchUsers(); // Refresh UI
       }
-
-      // Update Firestore
-      await setDoc(userRef, { attendance: attendanceRecords }, { merge: true });
-
-      console.log("Attendance marked successfully!");
-      fetchUsers(); // Refresh data
     }
   } catch (error) {
     console.error("Error marking attendance:", error);
   }
 }
-
 
   useEffect(() => {
     if (currentUser) {

@@ -104,27 +104,25 @@ const captureFace = async () => {
       );
 
       if (distance < 0.5) {
-        // 0.5 is the threshold for face similarity
-        if (data.role !== role) {
+        // Check if face belongs to the current user
+        if (doc.id !== user.uid) {
           setError(
-            "Face already registered under a different role. Please log in."
+            "Face does not belong to this account. Please log in with the correct account."
           );
           setLoading(false);
           return;
-        } else {
-          // Face is recognized and belongs to the same role, allow login
-          setSuccess("Face recognized. Logging in...");
-          stopCamera(); // Turn off camera
-          setTimeout(() => router.push("/dashboard"), 1500);
-          setLoading(false);
-          return;
         }
+        // Face matches the correct account
+          setTimeout(() => {
+             setSuccess("Face recognized. Logging in...");
+          }, 1000);
+        stopCamera();
+        setTimeout(() => router.push("/dashboard"), 1500);
+        setLoading(false);
+        return;
       }
     }
   }
-
-  // If face is not found, register it
-  setSuccess("Face registered successfully!");
 
   // Capture face image
   const canvas = document.createElement("canvas");
@@ -150,6 +148,12 @@ const captureFace = async () => {
     faceDescriptor,
     faceImage: imageUrl,
   });
+
+  setTimeout(()=> {
+    setSuccess("Face registered successfully!");
+  }, 1000)
+  // If face is not found, register it
+  
 
   // console.log(" Face data stored in Firestore!");
 
