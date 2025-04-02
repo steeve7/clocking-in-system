@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState} from "react";
 import { auth, db } from "@/lib/firebase"; // Import Firebase auth & Firestore
 import {
   signInWithEmailAndPassword,
@@ -93,10 +93,10 @@ export default function AdminProfile() {
       createdAt: serverTimestamp(),
     });
 
-    // ✅ Store success message in local storage before logging out
+    // Store success message in local storage before logging out
     localStorage.setItem("successMessage", "User Created Successfully!");
 
-    // ✅ Log out new user & restore admin session after a delay
+    // Log out new user & restore admin session after a delay
     setTimeout(async () => {
       await signOut(auth);
       console.log("New user logged out");
@@ -104,6 +104,29 @@ export default function AdminProfile() {
       await signInWithEmailAndPassword(auth, adminEmail, adminPassword);
       console.log("Admin session restored.");
     }, 3000); // ⏳ 3s delay before logging out
+
+     const templateParams = {
+       to_email: userData.email.trim(), //  Send email to the user who signed up
+       name: userData.name,
+       role: userData.role,
+       password: userData.password,
+       location: userData.location,
+       createdAt: serverTimestamp(),
+     };
+
+     emailjs
+       .send(
+         "service_sm5r8fj", // Your actual Service ID
+         "template_x1l88yh", // Your actual Template ID
+         templateParams, // Pass the correct object here
+         "abh7mLjaQox8Fuece" // Your Public Key
+       )
+       .then((response) => {
+         console.log(" Email sent successfully to:", userData.email);
+       })
+       .catch((error) => {
+         console.error("Error sending email:", error);
+       });
 
     setUserData({
       name: "",
