@@ -1,5 +1,5 @@
 "use client";
-import React, { useState} from "react";
+import React, { useState, useEffect} from "react";
 import { auth, db } from "@/lib/firebase"; // Import Firebase auth & Firestore
 import {
   signInWithEmailAndPassword,
@@ -33,6 +33,14 @@ export default function AdminProfile() {
   // }, [success]);
 
   // Handle form input change
+   useEffect(() => {
+     const storedMessage = localStorage.getItem("successMessage");
+     if (storedMessage) {
+       setSuccess(storedMessage);
+       localStorage.removeItem("successMessage"); // Remove it after showing
+     }
+   }, []);
+
   const handleChange = (e) => {
     setUserData({ ...userData, [e.target.name]: e.target.value });
   };
@@ -71,76 +79,82 @@ export default function AdminProfile() {
     return;
   }
 
-  try {
-    const userCredential = await createUserWithEmailAndPassword(
-      auth,
-      userData.email,
-      userData.password
-    );
-    const user = userCredential.user;
+ try {
+   const userCredential = await createUserWithEmailAndPassword(
+     auth,
+     userData.email,
+     userData.password
+   );
+   const user = userCredential.user;
 
-    await updateProfile(user, { displayName: userData.name.trim() });
+   await updateProfile(user, { displayName: userData.name.trim() });
 
-    await setDoc(doc(db, "users", user.uid), {
-      uid: user.uid,
-      name: userData.name.trim(),
-      email: user.email,
-      role: userData.role,
-      location: userData.location,
-      address: userData.address,
-      state: userData.state,
-      zip: userData.zip,
-      createdAt: serverTimestamp(),
-    });
+   await setDoc(doc(db, "users", user.uid), {
+     uid: user.uid,
+     name: userData.name.trim(),
+     email: user.email,
+     role: userData.role,
+     location: userData.location,
+     address: userData.address,
+     state: userData.state,
+     zip: userData.zip,
+     createdAt: serverTimestamp(),
+   });
 
-    // Store success message in local storage before logging out
-    localStorage.setItem("successMessage", "User Created Successfully!");
+   // Update the success state before logging out
+   setSuccess("User Created Successfully!");
+   setError("");
 
-    // Log out new user & restore admin session after a delay
-    setTimeout(async () => {
-      await signOut(auth);
-      console.log("New user logged out");
+   // Store success message in local storage (optional)
+   localStorage.setItem("successMessage", "User Created Successfully!");
 
-      await signInWithEmailAndPassword(auth, adminEmail, adminPassword);
-      console.log("Admin session restored.");
-    }, 3000); // ⏳ 3s delay before logging out
+   // Delay logout to allow UI to update
+   setTimeout(async () => {
+     await signOut(auth);
+     console.log("New user logged out");
 
-     const templateParams = {
-       to_email: userData.email.trim(), //  Send email to the user who signed up
-       name: userData.name,
-       role: userData.role,
-       password: userData.password,
-       location: userData.location,
-       createdAt: serverTimestamp(),
-     };
+     await signInWithEmailAndPassword(auth, adminEmail, adminPassword);
+     console.log("Admin session restored.");
+   }, 3000); // 3s delay to let the success message show on UI
 
-     emailjs
-       .send(
-         "service_sm5r8fj", // Your actual Service ID
-         "template_x1l88yh", // Your actual Template ID
-         templateParams, // Pass the correct object here
-         "abh7mLjaQox8Fuece" // Your Public Key
-       )
-       .then((response) => {
-         console.log(" Email sent successfully to:", userData.email);
-       })
-       .catch((error) => {
-         console.error("Error sending email:", error);
-       });
+   const templateParams = {
+     to_email: userData.email.trim(), //  Send email to the user who signed up
+     name: userData.name,
+     role: userData.role,
+     password: userData.password,
+     location: userData.location,
+     createdAt: serverTimestamp(),
+   };
 
-    setUserData({
-      name: "",
-      email: "",
-      password: "",
-      role: "",
-      location: "",
-      address: "",
-      state: "",
-      zip: "",
-    });
-  } catch (error) {
-    setError("Error creating user: " + error.message);
-  }
+   emailjs
+     .send(
+       "service_sm5r8fj", // Your actual Service ID
+       "template_x1l88yh", // Your actual Template ID
+       templateParams, // Pass the correct object here
+       "abh7mLjaQox8Fuece" // Your Public Key
+     )
+     .then((response) => {
+       setSuccess(" Email sent successfully to:", userData.email);
+     })
+     .catch((error) => {
+       setError("Error sending email:", error);
+     });
+
+   // Reset form after success
+   setUserData({
+     name: "",
+     email: "",
+     password: "",
+     role: "",
+     location: "",
+     address: "",
+     state: "",
+     zip: "",
+   });
+ } catch (error) {
+   setError("Error creating user: " + error.message);
+   setSuccess(""); // Clear success message on error
+ }
 };
 
   return (

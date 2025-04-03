@@ -112,9 +112,10 @@ const captureFace = async () => {
           setLoading(false);
           return;
         }
+
         // Face matches the correct account
           setTimeout(() => {
-             setSuccess("Face recognized. Logging in...");
+            setSuccess("Face registered successfully!");
           }, 1000);
         stopCamera();
         setTimeout(() => router.push("/dashboard"), 1500);
@@ -181,11 +182,12 @@ const drawFaceBox = (detection) => {
   ctx.strokeRect(x, y, width, height);
 };
 
+
   return (
     <div className="flex flex-col items-center mt-10">
       <h2 className="text-xl font-bold mb-4">Face Detection</h2>
       {error && <p className="text-red-500">{error}</p>}
-      {error && <p className="text-orange-500 text-[30px]">{success}</p>}
+      {success && <p className="text-orange-500 text-[20px]">{success}</p>}
       <video ref={videoRef} autoPlay className="border rounded-lg mb-4" />
       <canvas ref={canvasRef} style={{ display: "none" }} />
       <button
