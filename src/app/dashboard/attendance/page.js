@@ -26,6 +26,7 @@ const [selectedDate, setSelectedDate] = useState(
 const currentUser = auth.currentUser;
 const storage = getStorage();
 
+// Fetch user role on login
 useEffect(() => {
   if (currentUser) {
     fetchUserRole();
@@ -43,15 +44,17 @@ async function fetchUserRole() {
       setCurrentUserRole("Employee");
     }
   } catch (error) {
-    setError("Error fetching user role:", error);
+    console.error("Error fetching user role:", error);
+    setError("Error fetching user role");
   }
 }
 
+// Fetch users when role or date changes
 useEffect(() => {
   if (currentUserRole) {
     fetchUsers();
   }
-}, [currentUserRole, selectedDate]); // Fetch users when selectedDate changes
+}, [currentUserRole, selectedDate]);
 
 async function fetchUsers() {
   setLoading(true);
@@ -68,16 +71,13 @@ async function fetchUsers() {
         ? data.attendance
         : [];
 
-      // Find the stored attendance record for the selected date
+      // ✅ Find stored attendance for the selected date
       const selectedAttendanceRecord = attendanceRecords.find(
         (record) => record.date === selectedDate
       );
 
-      // Ensure the correct stored time is displayed
       const lastAttendanceDate = selectedAttendanceRecord?.date || "No records";
       const lastAttendanceTime = selectedAttendanceRecord?.time || "N/A";
-      // console.log("Selected Attendance Record:", selectedAttendanceRecord);
-      // console.log("Fetched Time:", lastAttendanceTime);
 
       let imageUrl = data.faceImage || "";
       if (!imageUrl) {
@@ -100,21 +100,22 @@ async function fetchUsers() {
         status: selectedAttendanceRecord ? "✅ Present" : "❌ Absent",
       };
 
+      // ✅ Ensure managers see all users, but employees see only their data
       if (doc.id === currentUser.uid || currentUserRole === "Manager") {
-          userData.push(userEntry);
-        }
+        userData.push(userEntry);
+      }
     }
-    // console.log("Final user data before setting state:", userData);
 
     setUsers(userData);
   } catch (error) {
-    setError("Error fetching users:", error);
+    console.error("Error fetching users:", error);
+    setError("Error fetching users");
   } finally {
     setLoading(false);
-    // console.log("Selected Date:", selectedDate);
   }
 }
 
+//  Mark attendance without overwriting previous time
 async function markAttendance(userId) {
   const now = new Date();
   const currentTime = now.toLocaleTimeString([], {
@@ -137,35 +138,42 @@ async function markAttendance(userId) {
       );
 
       if (todayRecordIndex === -1) {
-        // User hasn't clocked in today, so add a new entry
+        // First check-in today: Store time
         attendanceRecords.push({ date: todayDate, time: currentTime });
       } else {
-        // Update the existing record with a new time (if needed)
-        attendanceRecords[todayRecordIndex].time = currentTime;
+        // Prevent overwriting: Keep first logged time
+        if (!attendanceRecords[todayRecordIndex].time) {
+          attendanceRecords[todayRecordIndex].time = currentTime;
+        }
       }
 
-      // Save the updated attendance records
+      // Save to Firestore
       await setDoc(userRef, { attendance: attendanceRecords }, { merge: true });
 
-      setSuccess("Attendance marked successfully with time", currentTime);
+      setSuccess("Attendance marked successfully");
+      
+      // Immediately refresh users after marking attendance
+      fetchUsers(); 
     }
   } catch (error) {
-    setError("Error marking attendance:", error);
+    console.error("Error marking attendance:", error);
+    setError("Error marking attendance");
   }
 }
 
- useEffect(() => {
-    if (currentUser && currentUserRole === "Manager") {
-      markAttendance(currentUser.uid);
-    }
-  }, [currentUser, currentUserRole]);
+//  Ensure attendance only updates for the logged-in manager
+useEffect(() => {
+  if (currentUser && currentUserRole === "Manager") {
+    markAttendance(currentUser.uid);
+  }
+}, [currentUser, currentUserRole]);
 
-
+// heck attendance only for the logged-in user
 useEffect(() => {
   if (currentUser) {
     checkAndMarkAttendance(currentUser.uid);
   }
-}, [currentUser]); // Runs when the user logs in
+}, [currentUser]);
 
 async function checkAndMarkAttendance(userId) {
   try {
@@ -181,17 +189,15 @@ async function checkAndMarkAttendance(userId) {
       );
 
       if (!todayRecord) {
-        setSuccess("User has NOT marked attendance today. Marked now!");
-        await markAttendance(userId); // Ensure markAttendance() is defined before this call
+        console.log("User has NOT marked attendance today. Marking now...");
+        await markAttendance(userId);
       } else {
-        setSuccess(
-          "Attendance marked for today!",
-          todayRecord
-        );
+        console.log("User has already marked attendance today:", todayRecord);
       }
     }
   } catch (error) {
-    setError("Error checking attendance", error);
+    console.error("Error checking attendance:", error);
+    setError("Error checking attendance");
   }
 }
 
