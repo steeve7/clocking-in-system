@@ -134,7 +134,7 @@ export default function AdminProfile() {
        "abh7mLjaQox8Fuece" // Your Public Key
      )
      .then((response) => {
-       setSuccess(" Email sent successfully to:", userData.email);
+       setSuccess("successMessage", "Email sent successfully to:", userData.email);
      })
      .catch((error) => {
        setError("Error sending email:", error);

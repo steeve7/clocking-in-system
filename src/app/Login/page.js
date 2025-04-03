@@ -16,6 +16,7 @@ export default function Login() {
 
 const today = new Date().toISOString().split("T")[0];
 
+
 async function handleLogin(e) {
   e.preventDefault();
   setError("");
@@ -36,7 +37,7 @@ async function handleLogin(e) {
       const userData = userDoc.data();
       const role = userData.role?.toLowerCase(); // Normalize to lowercase
 
-      // ✅ Auto-mark attendance
+      // Auto-mark attendance
       await updateDoc(userDocRef, {
         attendance: arrayUnion({
           date: today,
@@ -45,7 +46,7 @@ async function handleLogin(e) {
         }),
       });
 
-      // ✅ Redirect based on role
+      // Redirect based on role
       if (role === "admin") {
         setSuccess("Login successfully");
         router.push("/admin");

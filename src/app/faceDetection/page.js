@@ -182,7 +182,6 @@ const drawFaceBox = (detection) => {
   ctx.strokeRect(x, y, width, height);
 };
 
-
   return (
     <div className="flex flex-col items-center mt-10">
       <h2 className="text-xl font-bold mb-4">Face Detection</h2>
