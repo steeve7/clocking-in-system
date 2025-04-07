@@ -23,10 +23,11 @@ const [currentUserRole, setCurrentUserRole] = useState(null);
 const [selectedDate, setSelectedDate] = useState(
   new Date().toISOString().split("T")[0]
 );
+
 const currentUser = auth.currentUser;
 const storage = getStorage();
 
-// Fetch user role on login
+// Get current user role
 useEffect(() => {
   if (currentUser) {
     fetchUserRole();
@@ -49,13 +50,14 @@ async function fetchUserRole() {
   }
 }
 
-// Fetch users when role or date changes
+// Fetch users when role or selectedDate changes
 useEffect(() => {
   if (currentUserRole) {
     fetchUsers();
   }
 }, [currentUserRole, selectedDate]);
 
+// Fetch users with role-based attendance logic
 async function fetchUsers() {
   setLoading(true);
   try {
@@ -65,43 +67,60 @@ async function fetchUsers() {
     const querySnapshot = await getDocs(userQuery);
     let userData = [];
 
-    for (const doc of querySnapshot.docs) {
-      const data = doc.data();
-      const attendanceRecords = Array.isArray(data.attendance)
-        ? data.attendance
-        : [];
+    for (const docSnap of querySnapshot.docs) {
+      const data = docSnap.data();
+      const attendanceRecords = Array.isArray(data.attendance) ? data.attendance : [];
 
-      // ✅ Find stored attendance for the selected date
-      const selectedAttendanceRecord = attendanceRecords.find(
-        (record) => record.date === selectedDate
-      );
+      const todayDate = new Date().toISOString().split("T")[0];
+      let status = "";
+      let lastAttendanceDate = "No record";
+      let lastAttendanceTime = "N/A";
 
-      const lastAttendanceDate = selectedAttendanceRecord?.date || "No records";
-      const lastAttendanceTime = selectedAttendanceRecord?.time || "N/A";
+      const isViewingToday = selectedDate === todayDate;
+      const isSelf = docSnap.id === currentUser.uid;
 
+    // Use selected date if not today and the user is the employee
+    if (!isViewingToday && currentUserRole === "Employee" && isSelf) {
+      const selectedRecord = attendanceRecords.find(record => record.date === selectedDate);
+      status = selectedRecord ? "✅ Present" : "❌ Absent";
+      lastAttendanceDate = selectedRecord?.date || "No record";
+      lastAttendanceTime = selectedRecord?.time || "N/A";
+    } else {
+      // Use today’s record
+      const todayRecord = attendanceRecords.find(record => record.date === todayDate);
+      const sortedRecords = [...attendanceRecords].sort((a, b) => new Date(b.date) - new Date(a.date));
+      const latestRecord = sortedRecords[0];
+
+      status = todayRecord ? "✅ Present" : "❌ Absent";
+      lastAttendanceDate = latestRecord?.date || "No record";
+      lastAttendanceTime = todayRecord?.time || "N/A";
+    }
+
+
+      // Load face image if missing
       let imageUrl = data.faceImage || "";
       if (!imageUrl) {
         try {
-          const storageRef = ref(storage, `profile_pictures/${doc.id}`);
+          const storageRef = ref(storage, `profile_pictures/${docSnap.id}`);
           imageUrl = await getDownloadURL(storageRef);
-        } catch (storageError) {
+        } catch (e) {
           console.warn(`No profile image found for ${data.name}`);
         }
       }
 
       const userEntry = {
-        id: doc.id,
+        id: docSnap.id,
         name: data.name,
         email: data.email,
         role: data.role,
         lastAttendance: lastAttendanceDate,
         lastAttendanceTime: lastAttendanceTime,
         faceImage: imageUrl,
-        status: selectedAttendanceRecord ? "✅ Present" : "❌ Absent",
+        status: status,
       };
 
-      // ✅ Ensure managers see all users, but employees see only their data
-      if (doc.id === currentUser.uid || currentUserRole === "Manager") {
+      // Show all to manager or just self to employee
+      if (docSnap.id === currentUser.uid || currentUserRole === "Manager") {
         userData.push(userEntry);
       }
     }
@@ -115,7 +134,21 @@ async function fetchUsers() {
   }
 }
 
-//  Mark attendance without overwriting previous time
+// Manager auto-mark attendance on login
+useEffect(() => {
+  if (currentUser && currentUserRole === "Manager") {
+    markAttendance(currentUser.uid);
+  }
+}, [currentUser, currentUserRole]);
+
+// Employee attendance check on login
+useEffect(() => {
+  if (currentUser && currentUserRole === "Employee") {
+    checkAndMarkAttendance(currentUser.uid);
+  }
+}, [currentUser, currentUserRole]);
+
+// Attendance logic for both roles
 async function markAttendance(userId) {
   const now = new Date();
   const currentTime = now.toLocaleTimeString([], {
@@ -123,7 +156,7 @@ async function markAttendance(userId) {
     minute: "2-digit",
     second: "2-digit",
   });
-  const todayDate = new Date().toISOString().split("T")[0]; // Store in YYYY-MM-DD format
+  const todayDate = now.toISOString().split("T")[0];
 
   try {
     const userRef = doc(db, "users", userId);
@@ -132,28 +165,20 @@ async function markAttendance(userId) {
     if (userDoc.exists()) {
       let attendanceRecords = userDoc.data().attendance || [];
 
-      // Find today's attendance record
-      const todayRecordIndex = attendanceRecords.findIndex(
-        (record) => record.date === todayDate
-      );
+      const todayIndex = attendanceRecords.findIndex(record => record.date === todayDate);
 
-      if (todayRecordIndex === -1) {
-        // First check-in today: Store time
+      if (todayIndex === -1) {
         attendanceRecords.push({ date: todayDate, time: currentTime });
       } else {
-        // Prevent overwriting: Keep first logged time
-        if (!attendanceRecords[todayRecordIndex].time) {
-          attendanceRecords[todayRecordIndex].time = currentTime;
+        // Ensure we don't overwrite first check-in time
+        if (!attendanceRecords[todayIndex].time) {
+          attendanceRecords[todayIndex].time = currentTime;
         }
       }
 
-      // Save to Firestore
       await setDoc(userRef, { attendance: attendanceRecords }, { merge: true });
-
       setSuccess("Attendance marked successfully");
-      
-      // Immediately refresh users after marking attendance
-      fetchUsers(); 
+      fetchUsers(); // Refresh
     }
   } catch (error) {
     console.error("Error marking attendance:", error);
@@ -161,20 +186,7 @@ async function markAttendance(userId) {
   }
 }
 
-//  Ensure attendance only updates for the logged-in manager
-useEffect(() => {
-  if (currentUser && currentUserRole === "Manager") {
-    markAttendance(currentUser.uid);
-  }
-}, [currentUser, currentUserRole]);
-
-// heck attendance only for the logged-in user
-useEffect(() => {
-  if (currentUser) {
-    checkAndMarkAttendance(currentUser.uid);
-  }
-}, [currentUser]);
-
+// Check and mark for employee if not already marked
 async function checkAndMarkAttendance(userId) {
   try {
     const userRef = doc(db, "users", userId);
@@ -183,16 +195,14 @@ async function checkAndMarkAttendance(userId) {
     if (userDoc.exists()) {
       let attendanceRecords = userDoc.data().attendance || [];
       const todayDate = new Date().toISOString().split("T")[0];
-
-      const todayRecord = attendanceRecords.find(
-        (record) => record.date === todayDate
-      );
+      const todayRecord = attendanceRecords.find(record => record.date === todayDate);
 
       if (!todayRecord) {
         console.log("User has NOT marked attendance today. Marking now...");
         await markAttendance(userId);
       } else {
         console.log("User has already marked attendance today:", todayRecord);
+        fetchUsers();
       }
     }
   } catch (error) {
@@ -315,7 +325,7 @@ async function checkAndMarkAttendance(userId) {
                     {user.status}
                   </td>
                   <td className="p-3 text-black font-work font-normal">
-                    {selectedDate}
+                    {user.lastAttendance}
                   </td>
                   <td className="p-3 text-black font-work font-normal">
                     {user.lastAttendanceTime}
