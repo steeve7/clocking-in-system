@@ -66,9 +66,14 @@ async function fetchUsers() {
     const userQuery = collection(db, "users");
     const querySnapshot = await getDocs(userQuery);
     let userData = [];
-
+  console.log("Current User:", currentUser);
+  console.log("Current User UID:", currentUser?.uid);
     for (const docSnap of querySnapshot.docs) {
       const data = docSnap.data();
+      console.log("Processing user document:", docSnap.id);
+console.log("User name from doc:", data.name);
+console.log("User attendance array:", data.attendance);
+
       const attendanceRecords = Array.isArray(data.attendance) ? data.attendance : [];
 
       const todayDate = new Date().toISOString().split("T")[0];
@@ -79,25 +84,23 @@ async function fetchUsers() {
       const isViewingToday = selectedDate === todayDate;
       const isSelf = docSnap.id === currentUser.uid;
 
-    // Use selected date if not today and the user is the employee
-    if (!isViewingToday && currentUserRole === "Employee" && isSelf) {
-      const selectedRecord = attendanceRecords.find(record => record.date === selectedDate);
-      status = selectedRecord ? "✅ Present" : "❌ Absent";
-      lastAttendanceDate = selectedRecord?.date || "No record";
-      lastAttendanceTime = selectedRecord?.time || "N/A";
-    } else {
-      // Use today’s record
-      const todayRecord = attendanceRecords.find(record => record.date === todayDate);
-      const sortedRecords = [...attendanceRecords].sort((a, b) => new Date(b.date) - new Date(a.date));
-      const latestRecord = sortedRecords[0];
+      if (!isViewingToday && currentUserRole === "Employee" && isSelf) {
+        const selectedRecord = attendanceRecords.find(record => record.date === selectedDate);
+        status = selectedRecord ? "✅ Present" : "❌ Absent";
+        lastAttendanceDate = selectedRecord?.date || "No record";
+        lastAttendanceTime = selectedRecord?.time || "N/A";
+      } else {
+        const todayRecord = attendanceRecords.find(record => record.date === todayDate);
+        console.log("Today's attendance record:", todayRecord);
 
-      status = todayRecord ? "✅ Present" : "❌ Absent";
-      lastAttendanceDate = latestRecord?.date || "No record";
-      lastAttendanceTime = todayRecord?.time || "N/A";
-    }
+        const sortedRecords = [...attendanceRecords].sort((a, b) => new Date(b.date) - new Date(a.date));
+        const latestRecord = sortedRecords[0];
 
+        status = todayRecord ? "✅ Present" : "❌ Absent";
+        lastAttendanceDate = latestRecord?.date || "No record";
+        lastAttendanceTime = todayRecord?.time || "N/A";
+      }
 
-      // Load face image if missing
       let imageUrl = data.faceImage || "";
       if (!imageUrl) {
         try {
@@ -118,8 +121,8 @@ async function fetchUsers() {
         faceImage: imageUrl,
         status: status,
       };
+      console.log(`User: ${data.name}, Last Attendance Time: ${lastAttendanceTime}`);
 
-      // Show all to manager or just self to employee
       if (docSnap.id === currentUser.uid || currentUserRole === "Manager") {
         userData.push(userEntry);
       }
@@ -133,6 +136,7 @@ async function fetchUsers() {
     setLoading(false);
   }
 }
+
 
 // Manager auto-mark attendance on login
 useEffect(() => {

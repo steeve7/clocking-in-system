@@ -6,7 +6,7 @@ import { doc, getDoc } from "firebase/firestore";
 import AdminProfile from "@/components/admin-profile/AdminProfile";
 
 export default function page() {
-     const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
