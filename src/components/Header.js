@@ -8,7 +8,13 @@ import { MdOutlineKeyboardArrowDown } from "react-icons/md";
 import { useEffect, useState } from "react";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  onSnapshot,
+} from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -22,50 +28,104 @@ export default function Header({ setIsSidebarOpen }) {
   const router = useRouter();
   const [faceImage, setFaceImage] = useState("");
 
+  // useEffect(() => {
+  //   const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+  //     if (!currentUser) {
+  //       router.replace("/Login"); // Redirect immediately
+  //       return;
+  //     }
+
+  //     setUser(currentUser);
+  //     setLoadingAuth(false); // Auth check is done
+
+  //     // Fetch user details from Firestore
+  //     try {
+  //       const userRef = collection(db, "users");
+  //       const q = query(userRef, where("uid", "==", currentUser.uid));
+  //       const querySnapshot = await getDocs(q);
+
+  //       if (!querySnapshot.empty) {
+  //         const userData = querySnapshot.docs[0].data();
+  //         setUserName(userData.name || ""); // Ensure userData.name is a string
+  //         setUserEmail(userData.email || "");
+  //        // Check Firestore for faceImage first
+  //         if (userData.faceImage) {
+  //           setFaceImage(userData.faceImage);
+  //         } else {
+  //           // If no image in Firestore, try fetching from Firebase Storage
+  //           const storageRef = ref(storage, `profile_pictures/${currentUser.uid}`);
+  //           try {
+  //             const url = await getDownloadURL(storageRef);
+  //             setFaceImage(url);
+  //           } catch (storageError) {
+  //             console.warn("No profile image found in Storage.");
+  //             setFaceImage(""); // Set to empty if no image is found
+  //           }
+  //         }
+  //       }
+  //     } catch (error) {
+  //       console.error("Error fetching user data:", error);
+  //     }
+
+  //     setLoading(false);
+  //   });
+
+  //   return () => unsubscribe();
+  // }, [router]);
+
+
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (!currentUser) {
-        router.replace("/Login"); // Redirect immediately
-        return;
-      }
+  const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
+    if (!currentUser) {
+      router.replace("/Login");
+      return;
+    }
 
-      setUser(currentUser);
-      setLoadingAuth(false); // Auth check is done
+    setUser(currentUser);
+    setLoadingAuth(false);
 
-      // Fetch user details from Firestore
-      try {
-        const userRef = collection(db, "users");
-        const q = query(userRef, where("uid", "==", currentUser.uid));
-        const querySnapshot = await getDocs(q);
+    const userQuery = query(
+      collection(db, "users"),
+      where("uid", "==", currentUser.uid)
+    );
 
-        if (!querySnapshot.empty) {
-          const userData = querySnapshot.docs[0].data();
-          setUserName(userData.name || ""); // Ensure userData.name is a string
+    const unsubscribeSnapshot = onSnapshot(
+      userQuery,
+      async (snapshot) => {
+        if (!snapshot.empty) {
+          const userData = snapshot.docs[0].data();
+          setUserName(userData.fullName ||  userData.name || "");
           setUserEmail(userData.email || "");
-         // Check Firestore for faceImage first
+
+          // Check Firestore first
           if (userData.faceImage) {
             setFaceImage(userData.faceImage);
           } else {
-            // If no image in Firestore, try fetching from Firebase Storage
-            const storageRef = ref(storage, `profile_pictures/${currentUser.uid}`);
+            // Try fetching from Firebase Storage
             try {
+              const storageRef = ref(storage, `profile_pictures/${currentUser.uid}`);
               const url = await getDownloadURL(storageRef);
               setFaceImage(url);
             } catch (storageError) {
-              console.warn("No profile image found in Storage.");
-              setFaceImage(""); // Set to empty if no image is found
+              console.warn("No profile image found.");
+              setFaceImage("");
             }
           }
         }
-      } catch (error) {
-        console.error("Error fetching user data:", error);
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Firestore user fetch error:", error);
+        setLoading(false);
       }
+    );
 
-      setLoading(false);
-    });
+    return () => unsubscribeSnapshot();
+  });
 
-    return () => unsubscribe();
-  }, [router]);
+  return () => unsubscribeAuth();
+}, [router]);
+  
 
   if (!user && !loadingAuth) {
     router.replace("/Login");

@@ -72,7 +72,9 @@ export default function Login() {
           }),
         });
 
-        setSuccess("Login successful");
+        setSuccess("Sign-In successfully");
+        setEmail("");
+        setPassword("");
         setLoading(false);
         if (role === "admin") {
           router.push("/admin");

@@ -57,7 +57,7 @@ export default function FaceDetection() {
               .withFaceDescriptors();
 
             drawFaceBoxes(detections);
-          }, 200);
+          }, 100);
         };
       }
     } catch (err) {
