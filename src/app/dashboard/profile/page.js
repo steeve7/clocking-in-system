@@ -205,7 +205,7 @@ export default function page() {
                     onClick={handleSave}
                     type="submit"
                     size="sm"
-                    className="bg-green-500 text-white px-2 py-2 rounded-2xl md:w-32 w-60"
+                    className="bg-green-500 text-white px-2 py-2 rounded-2xl md:w-32 w-60 cursor-pointer"
                   >
                     Save Changes
                   </button>

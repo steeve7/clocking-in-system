@@ -1,6 +1,6 @@
 import React from 'react'
 
-export default function MetaModal({ open, close, children }) {
+export default function MetaModal({ open, children }) {
   if (!open) return null;
   return (
     <div>
