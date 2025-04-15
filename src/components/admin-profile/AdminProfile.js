@@ -1,12 +1,11 @@
 "use client";
-import React, { useState, useEffect} from "react";
-import { auth, db } from "@/lib/firebase"; // Import Firebase auth & Firestore
+import React, { useState, useEffect } from "react";
+import { auth, db } from "@/lib/firebase";
 import {
   signInWithEmailAndPassword,
   signOut,
-  getAuth,
   createUserWithEmailAndPassword,
-  updateProfile
+  updateProfile,
 } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import emailjs from "@emailjs/browser";
@@ -21,141 +20,123 @@ export default function AdminProfile() {
     address: "",
     state: "",
     zip: "",
+    allowedLatitude: "",
+    allowedLongitude: "",
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  // useEffect(() => {
-  //   if (success) {
-  //     const timer = setTimeout(() => setSuccess(""), 5000);
-  //     return () => clearTimeout(timer);
-  //   }
-  // }, [success]);
-
-  // Handle form input change
-   useEffect(() => {
-     const storedMessage = localStorage.getItem("successMessage");
-     if (storedMessage) {
-       setSuccess(storedMessage);
-       localStorage.removeItem("successMessage"); // Remove it after showing
-     }
-   }, []);
+  useEffect(() => {
+    const storedMessage = localStorage.getItem("successMessage");
+    if (storedMessage) {
+      setSuccess(storedMessage);
+      localStorage.removeItem("successMessage");
+    }
+  }, []);
 
   const handleChange = (e) => {
     setUserData({ ...userData, [e.target.name]: e.target.value });
   };
 
   const handleCreateUser = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (
-    !userData.name ||
-    !userData.email ||
-    !userData.password ||
-    !userData.role ||
-    !userData.location ||
-    !userData.address ||
-    !userData.state ||
-    !userData.zip
-  ) {
-    setError("All fields are required.");
-    return;
-  }
+    const {
+      name,
+      email,
+      password,
+      role,
+      location,
+      address,
+      state,
+      zip,
+      allowedLatitude,
+      allowedLongitude,
+    } = userData;
 
-  if (userData.password.length < 6) {
-    setError("Password must be at least 6 characters long.");
-    return;
-  }
+    if (!name || !email || !password || !role || !location || !address || !state || !zip || !allowedLatitude || !allowedLongitude) {
+      setError("All fields including coordinates are required.");
+      return;
+    }
 
-  // Store admin credentials before creating the new user
-  const currentAdmin = auth.currentUser;
-  const adminEmail = currentAdmin?.email;
-  const adminPassword = prompt(
-    "Please enter your admin password to stay logged in:"
-  );
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters long.");
+      return;
+    }
 
-  if (!adminPassword) {
-    setError("Admin authentication required.");
-    return;
-  }
+    const currentAdmin = auth.currentUser;
+    const adminEmail = currentAdmin?.email;
+    const adminPassword = prompt("Please enter your admin password to stay logged in:");
+    if (!adminPassword) {
+      setError("Admin authentication required.");
+      return;
+    }
 
- try {
-   const userCredential = await createUserWithEmailAndPassword(
-     auth,
-     userData.email,
-     userData.password
-   );
-   const user = userCredential.user;
+    navigator.geolocation.getCurrentPosition(async (position) => {
+      const { latitude, longitude } = position.coords;
 
-   await updateProfile(user, { displayName: userData.name.trim() });
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
 
-   await setDoc(doc(db, "users", user.uid), {
-     uid: user.uid,
-     name: userData.name.trim(),
-     email: user.email,
-     role: userData.role,
-     location: userData.location,
-     address: userData.address,
-     state: userData.state,
-     zip: userData.zip,
-     createdAt: serverTimestamp(),
-   });
+        await updateProfile(user, { displayName: name.trim() });
 
-   // Update the success state before logging out
-   setSuccess("User Created Successfully!");
-   setError("");
+        await setDoc(doc(db, "users", user.uid), {
+          uid: user.uid,
+          name: name.trim(),
+          email: user.email,
+          role,
+          location,
+          address,
+          state,
+          zip,
+          createdAt: serverTimestamp(),
+          geolocation: { lat: latitude, lng: longitude },
+          allowedLatitude: parseFloat(allowedLatitude),
+          allowedLongitude: parseFloat(allowedLongitude),
+        });
 
-   // Store success message in local storage (optional)
-   localStorage.setItem("successMessage", "User Created Successfully!");
+        setSuccess("User Created Successfully!");
+        setError("");
+        localStorage.setItem("successMessage", "User Created Successfully!");
 
-   // Delay logout to allow UI to update
-   setTimeout(async () => {
-     await signOut(auth);
-     console.log("New user logged out");
+        setTimeout(async () => {
+          await signOut(auth);
+          await signInWithEmailAndPassword(auth, adminEmail, adminPassword);
+        }, 3000);
 
-     await signInWithEmailAndPassword(auth, adminEmail, adminPassword);
-     console.log("Admin session restored.");
-   }, 3000); // 3s delay to let the success message show on UI
+        emailjs.send(
+          "service_sm5r8fj",
+          "template_x1l88yh",
+          {
+            to_email: email.trim(),
+            name,
+            role,
+            password,
+            location,
+            createdAt: serverTimestamp(),
+          },
+          "abh7mLjaQox8Fuece"
+        );
 
-   const templateParams = {
-     to_email: userData.email.trim(), //  Send email to the user who signed up
-     name: userData.name,
-     role: userData.role,
-     password: userData.password,
-     location: userData.location,
-     createdAt: serverTimestamp(),
-   };
-
-   emailjs
-     .send(
-       "service_sm5r8fj", // Your actual Service ID
-       "template_x1l88yh", // Your actual Template ID
-       templateParams, // Pass the correct object here
-       "abh7mLjaQox8Fuece" // Your Public Key
-     )
-     .then((response) => {
-       setSuccess("successMessage", "Email sent successfully to:", userData.email);
-     })
-     .catch((error) => {
-       setError("Error sending email:", error);
-     });
-
-   // Reset form after success
-   setUserData({
-     name: "",
-     email: "",
-     password: "",
-     role: "",
-     location: "",
-     address: "",
-     state: "",
-     zip: "",
-   });
- } catch (error) {
-   setError("Error creating user: " + error.message);
-   setSuccess(""); // Clear success message on error
- }
-};
+        setUserData({
+          name: "",
+          email: "",
+          password: "",
+          role: "",
+          location: "",
+          address: "",
+          state: "",
+          zip: "",
+          allowedLatitude: "",
+          allowedLongitude: "",
+        });
+      } catch (error) {
+        setError("Error creating user: " + error.message);
+        setSuccess("");
+      }
+    });
+  };
 
   return (
     <div className="min-h-screen p-6 bg-gray-100 flex items-center justify-center">
@@ -250,7 +231,7 @@ export default function AdminProfile() {
                       <option value="">Select Role</option>
                       <option value="Employee">Employee</option>
                       <option value="Manager">Manager</option>
-                      <option value="admin">Admin</option>
+                      <option value="admin">admin</option>
                     </select>
                   </div>
 
@@ -399,6 +380,36 @@ export default function AdminProfile() {
                       required
                     />
                   </div>
+                  
+                {/* Latitude */}
+                <div className="md:col-span-3">
+                  <label htmlFor="allowedLatitude" className="font-medium text-black">Allowed Latitude</label>
+                  <input
+                    type="text"
+                    name="allowedLatitude"
+                    id="allowedLatitude"
+                    value={userData.allowedLatitude}
+                    onChange={handleChange}
+                    placeholder="e.g. 37.7749"
+                    className="h-10 border mt-1 rounded px-4 w-full bg-gray-50"
+                    required
+                  />
+                </div>
+
+                {/* Longitude */}
+                <div className="md:col-span-2">
+                  <label htmlFor="allowedLongitude" className="font-medium text-black">Allowed Longitude</label>
+                  <input
+                    type="text"
+                    name="allowedLongitude"
+                    id="allowedLongitude"
+                    value={userData.allowedLongitude}
+                    onChange={handleChange}
+                    placeholder="e.g. -122.4194"
+                    className="h-10 border mt-1 rounded px-4 w-full bg-gray-50"
+                    required
+                  />
+                </div>
 
                   <div className="md:col-span-5 text-right">
                     <div className="inline-flex items-end mt-5">

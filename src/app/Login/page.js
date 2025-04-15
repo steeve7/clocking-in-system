@@ -13,57 +13,138 @@ export default function Login() {
   const [success, setSuccess] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  // const [localIP, setLocalIP] = useState("");
   const router = useRouter();
 
-  // useEffect(() => {
-  //   const getLocalIP = async () => {
-  //     const pc = new RTCPeerConnection({ iceServers: [] });
-  //     pc.createDataChannel("");
-  //     pc.onicecandidate = (event) => {
-  //       if (event.candidate) {
-  //         const ipRegex = /([0-9]{1,3}(\.[0-9]{1,3}){3})/;
-  //         const ipMatch = event.candidate.candidate.match(ipRegex);
-  //         if (ipMatch) {
-  //           setLocalIP(ipMatch[1]);
-  //           pc.close();
-  //         }
-  //       }
-  //     };
-  //     await pc.createOffer().then((offer) => pc.setLocalDescription(offer));
-  //   };
 
-  //   getLocalIP();
-  // }, []);
+  
+  // const handleLogin = async (e) => {
+  //   e.preventDefault();
+  //   setError("");
+  //   setLoading(true);
+  //   setSuccess("");
+
+
+  //   try {
+  //     const userCredential = await signInWithEmailAndPassword(
+  //       auth,
+  //       email,
+  //       password
+  //     );
+  //     const user = userCredential.user;
+
+  //     const userDocRef = doc(db, "users", user.uid);
+  //     const userDoc = await getDoc(userDocRef);
+
+  //     if (userDoc.exists()) {
+  //       const userData = userDoc.data();
+  //       const role = userData.role?.toLowerCase();
+
+  //       await updateDoc(userDocRef, {
+  //         attendance: arrayUnion({
+  //           date: new Date().toISOString().split("T")[0],
+  //           status: "Active",
+  //           timestamp: new Date(),
+  //         }),
+  //       });
+
+  //       setSuccess("Sign-In successfully");
+  //       setEmail("");
+  //       setPassword("");
+  //       setLoading(false);
+  //       if (role === "admin") {
+  //         router.push("/admin");
+  //       } else if (role === "employee" || role === "manager") {
+  //         setLoading(false);
+
+  //         router.push("/faceDetection");
+  //       } else {
+  //         setError("Unauthorized role.");
+  //       }
+  //     } else {
+  //       setError("User data not found.");
+  //     }
+  //   } catch (error) {
+  //     console.error("Login Error:", error);
+  //     setError("Invalid email or password.");
+  //   }
+  // };
+
+  function getDistanceInMeters(lat1, lon1, lat2, lon2) {
+  function toRad(value) {
+    return (value * Math.PI) / 180;
+  }
+
+  const R = 6371000; // Earth radius in meters
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) *
+      Math.cos(toRad(lat2)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
 
   const handleLogin = async (e) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-    setSuccess("");
+  e.preventDefault();
+  setError("");
+  setLoading(true);
+  setSuccess("");
 
-    // const allowedIPs = ["172.20.10.1"]; // Replace with your allowed local IPs
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+    const userDocRef = doc(db, "users", user.uid);
+    const userDoc = await getDoc(userDocRef);
 
-    // if (!allowedIPs.includes(localIP)) {
-    //   setError("Access Denied! Connect to the required network.");
-    //   return;
-    // }
+    if (!userDoc.exists()) {
+      setError("User not found.");
+      setLoading(false);
+      return;
+    }
 
-    try {
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-      const user = userCredential.user;
+    const userData = userDoc.data();
+    const role = userData.role?.toLowerCase();
 
-      const userDocRef = doc(db, "users", user.uid);
-      const userDoc = await getDoc(userDocRef);
+    if (role === "admin") {
+      setSuccess("Admin login successful.");
+      router.push("/admin");
+      return;
+    }
 
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        const role = userData.role?.toLowerCase();
+    // Geolocation required for employees and managers
+    if (!("geolocation" in navigator)) {
+      setError("Geolocation is not supported by your browser.");
+      setLoading(false);
+      return;
+    }
 
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const currentLat = position.coords.latitude;
+        const currentLng = position.coords.longitude;
+
+        const allowedLat = parseFloat(userData.allowedLatitude);
+        const allowedLng = parseFloat(userData.allowedLongitude);
+
+        if (!allowedLat || !allowedLng) {
+          setError("No assigned location found. Contact your admin.");
+          setLoading(false);
+          return;
+        }
+
+        const distance = getDistanceInMeters(currentLat, currentLng, allowedLat, allowedLng);
+
+        if (distance > 200) {
+          setError("Login denied: not within your assigned work location.");
+          setLoading(false);
+          return;
+        }
+
+        // Mark attendance if login is valid
         await updateDoc(userDocRef, {
           attendance: arrayUnion({
             date: new Date().toISOString().split("T")[0],
@@ -72,27 +153,29 @@ export default function Login() {
           }),
         });
 
-        setSuccess("Sign-In successfully");
+        setSuccess("Login successful!");
         setEmail("");
         setPassword("");
         setLoading(false);
-        if (role === "admin") {
-          router.push("/admin");
-        } else if (role === "employee" || role === "manager") {
-          setLoading(false);
 
+        if (role === "manager" || role === "employee") {
           router.push("/faceDetection");
         } else {
           setError("Unauthorized role.");
         }
-      } else {
-        setError("User data not found.");
+      },
+      (geoError) => {
+        setError("Geolocation error: " + geoError.message);
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("Login Error:", error);
-      setError("Invalid email or password.");
-    }
-  };
+    );
+  } catch (error) {
+    console.error("Login Error:", error);
+    setError("Invalid email or password.");
+    setLoading(false);
+  }
+};
+
 
   return (
     <div className="min-h-screen bg-gray-100 flex justify-center">
