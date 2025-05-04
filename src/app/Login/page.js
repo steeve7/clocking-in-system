@@ -69,7 +69,7 @@ export default function Login() {
   //   }
   // };
 
-  function getDistanceInMeters(lat1, lon1, lat2, lon2) {
+function getDistanceInMeters(lat1, lon1, lat2, lon2) {
   function toRad(value) {
     return (value * Math.PI) / 180;
   }
@@ -78,24 +78,24 @@ export default function Login() {
   const dLat = toRad(lat2 - lat1);
   const dLon = toRad(lon2 - lon1);
   const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRad(lat1)) *
-      Math.cos(toRad(lat2)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 }
 
-
-  const handleLogin = async (e) => {
+const handleLogin = async (e) => {
   e.preventDefault();
   setError("");
   setLoading(true);
   setSuccess("");
 
   try {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const userCredential = await signInWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
     const user = userCredential.user;
     const userDocRef = doc(db, "users", user.uid);
     const userDoc = await getDoc(userDocRef);
@@ -115,7 +115,6 @@ export default function Login() {
       return;
     }
 
-    // Geolocation required for employees and managers
     if (!("geolocation" in navigator)) {
       setError("Geolocation is not supported by your browser.");
       setLoading(false);
@@ -126,7 +125,6 @@ export default function Login() {
       async (position) => {
         const currentLat = position.coords.latitude;
         const currentLng = position.coords.longitude;
-
         const allowedLat = parseFloat(userData.allowedLatitude);
         const allowedLng = parseFloat(userData.allowedLongitude);
 
@@ -136,15 +134,22 @@ export default function Login() {
           return;
         }
 
-        const distance = getDistanceInMeters(currentLat, currentLng, allowedLat, allowedLng);
+        const distance = getDistanceInMeters(
+          currentLat,
+          currentLng,
+          allowedLat,
+          allowedLng
+        );
 
-        if (distance > 200) {
-          setError("Login denied: not within your assigned work location.");
+        if (distance > 30) {
+          // 🔥 changed from 200 to 30 meters
+          setError(
+            "Login denied: you are more than 30 meters away from your assigned work location."
+          );
           setLoading(false);
           return;
         }
 
-        // Mark attendance if login is valid
         await updateDoc(userDocRef, {
           attendance: arrayUnion({
             date: new Date().toISOString().split("T")[0],
