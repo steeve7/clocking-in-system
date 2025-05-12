@@ -138,7 +138,7 @@ export default function Login() {
 
         const distance = getDistanceInMeters(currentLat, currentLng, allowedLat, allowedLng);
 
-        if (distance > 200) {
+        if (distance > 30) {
           setError("Login denied: not within your assigned work location.");
           setLoading(false);
           return;
