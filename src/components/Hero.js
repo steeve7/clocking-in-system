@@ -1,11 +1,20 @@
+'use client'
 import React from 'react'
 import Link from 'next/link';
 import { FaUser } from "react-icons/fa";
+import {motion} from 'framer-motion';
 
 export default function Hero() {
   return (
     <header className="flex lg:flex-row flex-col justify-center items-center w-full lg:px-20 px-10 py-10 bg-black h-[100vh]">
-      <div className="flex flex-col md:justify-start justify-center gap-8">
+      <motion.div
+        className="flex flex-col md:justify-start justify-center gap-8"
+        initial={{ opacity: 0, y: 50 }} // Start invisible & slightly below
+        whileInView={{ opacity: 1, y: 0 }} // Fade in and move up
+        transition={{ duration: 1.5, ease: "easeOut" }} // Slow & smooth
+        viewport={{ once: true, amount: 0.2 }} // Runs only once per session
+        style={{ willChange: "opacity, transform" }}
+      >
         <h1 className="font-Marhey font-medium text-center xl:text-[70px] text-[50px] text-white leading-[60px]">
           SmartFace Check-in
         </h1>
@@ -13,9 +22,16 @@ export default function Hero() {
           A smart clocking-in system using computer vision for face detection
           and recognition
         </p>
-      </div>
+      </motion.div>
 
-      <div className="flex flex-col justify-center items-center w-full gap-10 lg:mt-0 mt-10">
+      <motion.div
+        className="flex flex-col justify-center items-center w-full gap-10 lg:mt-0 mt-10"
+        initial={{ opacity: 0, y: 50 }} // Start invisible & slightly below
+        whileInView={{ opacity: 1, y: 0 }} // Fade in and move up
+        transition={{ duration: 1.5, ease: "easeOut" }} // Slow & smooth
+        viewport={{ once: true, amount: 0.2 }} // Runs only once per session
+        style={{ willChange: "opacity, transform" }}
+      >
         <img
           src="/images/home.svg"
           alt="detect_image"
@@ -27,7 +43,7 @@ export default function Hero() {
             Sign-In
           </Link>
         </div>
-      </div>
+      </motion.div>
     </header>
   );
 }

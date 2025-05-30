@@ -5,6 +5,7 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 import { doc, getDoc, updateDoc, arrayUnion } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { FaSignInAlt, FaEye, FaEyeSlash } from "react-icons/fa";
+import { motion } from "framer-motion";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -178,9 +179,15 @@ export default function Login() {
 
 
   return (
-    <div className="min-h-screen bg-black flex md:flex-row flex-col items-center">
-      {/* Left: Form Section */}
-      <div className="flex-1 p-6 sm:p-12 flex flex-col justify-center md:order-1 order-2 md:mt-0 mt-10">
+    <div className="min-h-screen bg-black flex md:flex-row flex-col items-center overflow-hidden">
+      <motion.div
+        className="flex-1 p-6 sm:p-12 flex flex-col justify-center md:order-1 order-2 md:mt-0 mt-10"
+        initial={{ opacity: 0, y: 50 }} // Start invisible & slightly below
+        whileInView={{ opacity: 1, y: 0 }} // Fade in and move up
+        transition={{ duration: 1.5, ease: "easeOut" }} // Slow & smooth
+        viewport={{ once: true, amount: 0.2 }} // Runs only once per session
+        style={{ willChange: "opacity, transform" }}
+      >
         <div className="flex justify-center items-center">
           <h1 className="font-Marhey font-medium text-center text-[50px] text-white leading-[50px] xl:w-1/2 w-full">
             SmartFace Check-in
@@ -226,14 +233,19 @@ export default function Login() {
             </form>
           </div>
         </div>
-      </div>
-      <div className="lg:block xl:w-[610px] h-[606px] md:order-2 order-1">
+      </motion.div>
+      <motion.div
+        className="lg:block xl:w-[610px] h-[606px] md:order-2 order-1 overflow-hidden"
+        initial={{ x: 300, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        transition={{ duration: 1.5, ease: "easeOut" }}
+      >
         <img
-          src="/images/login.svg"
+          src="/images/login.png"
           alt="detect_image"
           className="w-full h-full object-cover"
         />
-      </div>
+      </motion.div>
     </div>
   );
 }
