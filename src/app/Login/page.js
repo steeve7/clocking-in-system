@@ -178,9 +178,9 @@ export default function Login() {
 
 
   return (
-    <div className="min-h-screen bg-black flex flex-row items-center">
+    <div className="min-h-screen bg-black flex md:flex-row flex-col items-center">
       {/* Left: Form Section */}
-      <div className="flex-1 p-6 sm:p-12 flex flex-col justify-center">
+      <div className="flex-1 p-6 sm:p-12 flex flex-col justify-center md:order-1 order-2 md:mt-0 mt-10">
         <div className="flex justify-center items-center">
           <h1 className="font-Marhey font-medium text-center text-[50px] text-white leading-[50px] xl:w-1/2 w-full">
             SmartFace Check-in
@@ -227,9 +227,7 @@ export default function Login() {
           </div>
         </div>
       </div>
-
-      {/* Right: Fixed Size Image */}
-      <div className="hidden lg:block xl:w-[610px] h-[606px]">
+      <div className="lg:block xl:w-[610px] h-[606px] md:order-2 order-1">
         <img
           src="/images/login.svg"
           alt="detect_image"

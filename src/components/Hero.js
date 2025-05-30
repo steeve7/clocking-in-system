@@ -16,17 +16,17 @@ export default function Hero() {
       </div>
 
       <div className="flex flex-col justify-center items-center w-full gap-10 lg:mt-0 mt-10">
+        <img
+          src="/images/home.svg"
+          alt="detect_image"
+          className="lg:w-[482px] w-full rounded-[5px]"
+        />
         <div className="flex flex-row items-center gap-2 border bg-white border-white text-black rounded-[5px] px-4 py-2 hover:transition ease-in-out">
           <FaUser />
           <Link href="/Login" className="font-Montserrat font-bold text-[16px]">
             Sign-In
           </Link>
         </div>
-        <img
-          src="/images/home.svg"
-          alt="detect_image"
-          className="lg:w-[482px] w-full rounded-[5px]"
-        />
       </div>
     </header>
   );
