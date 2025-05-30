@@ -204,8 +204,10 @@ export default function FaceDetection() {
   };
 
   return (
-    <div className="flex flex-col items-center mt-10">
-      <h2 className="text-xl font-bold mb-4">Face Detection</h2>
+    <div className="flex flex-col items-center py-10 bg-black">
+      <h2 className="text-xl font-Marhey font-normal mb-4 text-white">
+        Face Detection
+      </h2>
       {error && <p className="text-red-500">{error}</p>}
       {success && <p className="text-green-500 text-[18px]">{success}</p>}
       <div className="relative">
@@ -217,7 +219,7 @@ export default function FaceDetection() {
       </div>
       <button
         onClick={captureFace}
-        className="bg-blue-600 text-white px-4 py-2 rounded mt-4"
+        className="bg-white text-black font-Montserrat font-medium px-4 py-2 rounded mt-4"
         disabled={loading}
       >
         {loading ? "Processing..." : "Capture Face"}

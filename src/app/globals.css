@@ -10,6 +10,8 @@
 :root{
   --font-Euclid: "Euclid Circular A";
   --font-Poppins: "Poppins";
+  --font-Marhey: "Marhey";
+  --font-Montserrat: "Montserrat"
 }
 
 .font-Euclid{
@@ -18,6 +20,12 @@
 .font-Poppins{
   font-family: var(--font-Poppins);
 }
+.font-Marhey{
+  font-family: var(--font-Marhey);
+}
+.font-Montserrat{
+  font-family: var(--font-Montserrat);
+}
 
 @media (prefers-color-scheme: dark) {
   :root {
@@ -25,6 +33,28 @@
     --foreground: #ededed;
   }
 }
+
+@font-face {
+  font-family: "Marhey";
+  src: url('/fontsMarhey/Marhey-Medium.ttf') format('truetype');
+  font-weight: 500; 
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Montserrat";
+  src: url('/fontMont/Montserrat-Medium.ttf') format('truetype');
+  font-weight: medium;
+  font-style: medium;
+}
+@font-face {
+  font-family: "Montserrat";
+  src: url('/public/fontMont/Montserrat-Bold.ttf') format('truetype');
+  font-weight: bold;
+  font-style: bold;
+}
+
+
 
 @font-face {
   font-family: "Euclid Circular A";

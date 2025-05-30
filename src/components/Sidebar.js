@@ -52,7 +52,7 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen }) {
       }`}
     >
       <div className="flex gap-2 justify-between flex-row items-center pl-4">
-        <h2 className="text-xl py-4 font-bold font-avenir">
+        <h2 className="text-xl py-4 font-Marhey font-normal">
           SmartFace Check-in
         </h2>
         <MdClose

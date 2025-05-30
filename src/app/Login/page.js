@@ -138,7 +138,7 @@ export default function Login() {
 
         const distance = getDistanceInMeters(currentLat, currentLng, allowedLat, allowedLng);
 
-        if (distance > 30) {
+        if (distance > 200) {
           setError("Login denied: not within your assigned work location.");
           setLoading(false);
           return;
@@ -178,61 +178,63 @@ export default function Login() {
 
 
   return (
-    <div className="min-h-screen bg-gray-100 flex justify-center">
-      <div className="max-w-screen-xl m-0 sm:m-10 bg-white shadow sm:rounded-lg flex justify-center flex-1">
-        <div className="lg:w-1/2 xl:w-5/12 p-6 sm:p-12 w-full">
-          <div className="flex justify-center items-center">
-            <h1 className="font-Euclid font-bold text-[30px] text-blue-500">SmartFace Check-In</h1>
-          </div>
-          <div className="mt-12 flex flex-col items-center">
-            {error && <p style={{ color: "red" }}>{error}</p>}
-            {success && <p className="text-orange-500">{success}</p>}
-            <div className="w-full flex-1 mt-8">
-              <form className="mx-auto max-w-xs" onSubmit={handleLogin}>
+    <div className="min-h-screen bg-black flex flex-row items-center">
+      {/* Left: Form Section */}
+      <div className="flex-1 p-6 sm:p-12 flex flex-col justify-center">
+        <div className="flex justify-center items-center">
+          <h1 className="font-Marhey font-medium text-center text-[50px] text-white leading-[50px] xl:w-1/2 w-full">
+            SmartFace Check-in
+          </h1>
+        </div>
+        <div className="mt-5 flex flex-col items-center">
+          {error && <p style={{ color: "red" }}>{error}</p>}
+          {success && <p className="text-orange-500">{success}</p>}
+          <div className="xl:w-[70%] w-full flex-1 mt-8 bg-white py-20 px-8 rounded-lg">
+            <form className="mx-auto max-w-xs" onSubmit={handleLogin}>
+              <input
+                className="w-full px-8 py-4 rounded-lg font-Montserrat font-medium bg-[#D8D7D7] border border-gray-200 placeholder:font-Montserrat placeholder-[#747373] text-sm focus:outline-none focus:border-gray-400 focus:bg-white"
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+              <div className="relative">
                 <input
-                  className="w-full px-8 py-4 rounded-lg font-medium bg-gray-100 border border-gray-200 placeholder-gray-500 text-sm focus:outline-none focus:border-gray-400 focus:bg-white"
-                  type="email"
-                  placeholder="Email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-8 py-4 rounded-lg font-Montserrat font-medium bg-[#D8D7D7] border border-gray-200 placeholder:font-Montserrat placeholder-[#747373] text-sm focus:outline-none focus:border-gray-400 focus:bg-white mt-5"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                 />
-                <div className="relative">
-                  <input
-                    className="w-full px-8 py-4 rounded-lg font-medium bg-gray-100 border border-gray-200 placeholder-gray-500 text-sm focus:outline-none focus:border-gray-400 focus:bg-white mt-5"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                  <div
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="cursor-pointer absolute inset-y-0 right-0 flex items-center mt-5 justify-center px-8 text-gray-600"
-                  >
-                    {showPassword ? <FaEye /> : <FaEyeSlash />}
-                  </div>
-                </div>
-
-                <button
-                  className={`mt-5 tracking-wide gap-2 cursor-pointer font-semibold text-white w-full py-4 rounded-lg transition-all duration-300 ease-in-out flex items-center justify-center focus:shadow-outline focus:outline-none ${
-                    loading
-                      ? "bg-gray-400 cursor-not-allowed"
-                      : "bg-blue-500 hover:bg-blue-600"
-                  }`}
-                  disabled={loading}
+                <div
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="cursor-pointer absolute inset-y-0 right-0 flex items-center mt-5 justify-center px-8 text-gray-600"
                 >
-                  <FaSignInAlt color="white" />
-                  {loading ? "Signing In..." : "Sign In"}
-                </button>
-              </form>
-            </div>
+                  {showPassword ? <FaEye /> : <FaEyeSlash />}
+                </div>
+              </div>
+
+              <button
+                className={`mt-5 tracking-wide gap-2 cursor-pointer font-semibold text-white w-full py-4 rounded-lg transition-all duration-300 ease-in-out flex items-center justify-center focus:shadow-outline focus:outline-none ${
+                  loading ? "bg-black cursor-not-allowed" : "bg-black"
+                }`}
+                disabled={loading}
+              >
+                <FaSignInAlt color="white" />
+                {loading ? "Signing In..." : "Sign In"}
+              </button>
+            </form>
           </div>
         </div>
-        <div className="flex-1 bg-green-100 text-center hidden md:flex">
-          <div
-            className="m-12 xl:m-16 w-full bg-contain bg-center bg-no-repeat"
-            style={{ backgroundImage: "url('/images/background.svg')" }}
-          ></div>
-        </div>
+      </div>
+
+      {/* Right: Fixed Size Image */}
+      <div className="hidden lg:block xl:w-[610px] h-[606px]">
+        <img
+          src="/images/login.svg"
+          alt="detect_image"
+          className="w-full h-full object-cover"
+        />
       </div>
     </div>
   );
