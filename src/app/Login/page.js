@@ -110,7 +110,7 @@ export default function Login() {
     const role = userData.role?.toLowerCase();
 
     if (role === "admin") {
-      setSuccess("Admin login successful.");
+      setSuccess("Admin login successfully.");
       router.push("/admin");
       return;
     }

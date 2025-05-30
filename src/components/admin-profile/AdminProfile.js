@@ -139,16 +139,21 @@ export default function AdminProfile() {
   };
 
   return (
-    <div className="min-h-screen p-6 bg-gray-100 flex items-center justify-center">
+    <div className="min-h-screen p-6 bg-black flex items-center justify-center">
       <div className="container max-w-screen-lg mx-auto">
         <div>
           <div className="bg-white rounded shadow-lg p-4 px-4 md:p-8 mb-6">
             <div className="grid gap-4 gap-y-2 text-sm grid-cols-1 lg:grid-cols-3">
               <div className="text-gray-600">
                 {error && <p style={{ color: "red" }}>{error}</p>}
-                {success && <p className="text-orange-500 text-2xl">{success}</p>}
-                <p className="font-medium text-lg font-Euclid">Admin Page</p>
-                <p className="font-normal text-base font-Poppins">
+                {success && (
+                  <p className="text-orange-500 text-2xl py-3">{success}</p>
+                )}
+                <p className="font-Marhey font-medium text-center text-[50px] leading-[50px] text-[#1e1e1e]">
+                  {" "}
+                  SmartFace Check-in
+                </p>
+                <p className="font-Montserrat font-medium text-base text-center">
                   Please fill out all the fields.
                 </p>
               </div>
@@ -161,7 +166,7 @@ export default function AdminProfile() {
                   <div className="md:col-span-2">
                     <label
                       htmlFor="full_name"
-                      className="font-medium font-Euclid text-black"
+                      className="font-Montserrat font-medium text-black"
                     >
                       Full Name
                     </label>
@@ -170,7 +175,7 @@ export default function AdminProfile() {
                       name="name"
                       id="name"
                       placeholder="Full Name"
-                      className="h-10 border mt-1 rounded px-4 w-full bg-gray-50 placeholder:text-gray-400 placeholder:font-normal placeholder:font-Poppins"
+                      className="h-10 border mt-1 outline-none px-4 w-full rounded-lg font-Montserrat font-medium bg-[#D8D7D7] border-gray-200 placeholder:font-Montserrat placeholder-[#747373]"
                       value={userData.name}
                       onChange={handleChange}
                       required
@@ -180,7 +185,7 @@ export default function AdminProfile() {
                   <div className="md:col-span-2">
                     <label
                       htmlFor="email"
-                      className="font-medium font-Euclid text-black"
+                      className="font-Montserrat font-medium text-black"
                     >
                       Email Address
                     </label>
@@ -188,7 +193,7 @@ export default function AdminProfile() {
                       type="text"
                       name="email"
                       id="email"
-                      className="h-10 border mt-1 rounded px-4 w-full bg-gray-50 placeholder:text-gray-400 placeholder:font-normal placeholder:font-Poppins"
+                      className="h-10 border mt-1 outline-none rounded-lg px-4 w-full font-Montserrat font-medium bg-[#D8D7D7] border-gray-200 placeholder:font-Montserrat placeholder-[#747373]"
                       value={userData.email}
                       onChange={handleChange}
                       required
@@ -199,7 +204,7 @@ export default function AdminProfile() {
                   <div className="md:col-span-2 mt-5">
                     <label
                       htmlFor="address"
-                      className="font-medium font-Euclid text-black"
+                      className="font-Montserrat font-medium text-black"
                     >
                       Password
                     </label>
@@ -207,7 +212,7 @@ export default function AdminProfile() {
                       type="password"
                       name="password"
                       id="address"
-                      className="h-10 border mt-1 rounded px-4 w-full bg-gray-50 placeholder:text-gray-400 placeholder:font-normal placeholder:font-Poppins"
+                      className="h-10 border mt-1 outline-none rounded-lg px-4 w-full font-Montserrat font-medium bg-[#D8D7D7] border-gray-200 placeholder:font-Montserrat placeholder-[#747373]"
                       value={userData.password}
                       onChange={handleChange}
                       required
@@ -217,7 +222,7 @@ export default function AdminProfile() {
                   <div className="md:col-span-2 mt-5">
                     <label
                       htmlFor="address"
-                      className="font-medium font-Euclid text-black"
+                      className="font-Montserrat font-medium text-black"
                     >
                       Role
                     </label>
@@ -226,7 +231,7 @@ export default function AdminProfile() {
                       value={userData.role}
                       onChange={handleChange}
                       required
-                      className="w-full px-4 py-2 border rounded-md mb-2"
+                      className="w-full px-4 py-2 border rounded-lg mb-2 font-Montserrat font-medium bg-[#D8D7D7] border-gray-200 placeholder:font-Montserrat placeholder-[#747373]"
                     >
                       <option value="">Select Role</option>
                       <option value="Employee">Employee</option>
@@ -238,7 +243,7 @@ export default function AdminProfile() {
                   <div className="md:col-span-2 mt-5">
                     <label
                       htmlFor="address"
-                      className="font-medium font-Euclid text-black"
+                      className="font-Montserrat font-medium text-black"
                     >
                       Address / Street
                     </label>
@@ -246,7 +251,7 @@ export default function AdminProfile() {
                       type="text"
                       name="address"
                       id="address"
-                      className="h-10 border mt-1 rounded px-4 w-full bg-gray-50 placeholder:text-gray-400 placeholder:font-normal placeholder:font-Poppins"
+                      className="h-10 border mt-1 outline-none rounded-lg px-4 w-full font-Montserrat font-medium bg-[#D8D7D7] border-gray-200 placeholder:font-Montserrat placeholder-[#747373]"
                       value={userData.address}
                       onChange={handleChange}
                       required
@@ -257,115 +262,44 @@ export default function AdminProfile() {
                   <div className="md:col-span-2 mt-5">
                     <label
                       htmlFor="country"
-                      className="font-medium font-Euclid text-black"
+                      className="font-Montserrat font-medium text-black"
                     >
                       Country / region
                     </label>
-                    <div className="h-10 bg-gray-50 flex border border-gray-200 rounded items-center mt-1">
-                      <input
-                        name="location"
-                        id="country"
-                        placeholder="Country"
-                        className="px-4 appearance-none outline-none w-full bg-transparent placeholder:text-gray-400 placeholder:font-normal placeholder:font-Poppins"
-                        value={userData.location}
-                        onChange={handleChange}
-                        required
-                      />
-                      <button
-                        tabIndex="-1"
-                        className="cursor-pointer outline-none focus:outline-none transition-all text-gray-300 hover:text-red-600"
-                      >
-                        <svg
-                          className="w-4 h-4 mx-2 fill-current"
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <line x1="18" y1="6" x2="6" y2="18"></line>
-                          <line x1="6" y1="6" x2="18" y2="18"></line>
-                        </svg>
-                      </button>
-                      <button
-                        tabIndex="-1"
-                        htmlFor="show_more"
-                        className="cursor-pointer outline-none focus:outline-none border-l border-gray-200 transition-all text-gray-300 hover:text-blue-600"
-                      >
-                        <svg
-                          className="w-4 h-4 mx-2 fill-current"
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <polyline points="18 15 12 9 6 15"></polyline>
-                        </svg>
-                      </button>
-                    </div>
+                    <input
+                      name="location"
+                      id="country"
+                      placeholder="Country"
+                      className="transition-all outline-none flex items-center h-10 border mt-1 rounded-lg px-4 w-fullfont-Montserrat font-medium bg-[#D8D7D7] border-gray-200 placeholder:font-Montserrat placeholder-[#747373]"
+                      value={userData.location}
+                      onChange={handleChange}
+                      required
+                    />
                   </div>
 
                   <div className="md:col-span-2 mt-5">
                     <label
                       htmlFor="state"
-                      className="font-medium font-Euclid text-black"
+                      className="font-Montserrat font-medium text-black"
                     >
                       State / province
                     </label>
-                    <div className="h-10 bg-gray-50 flex border border-gray-200 rounded items-center mt-1">
-                      <input
-                        name="state"
-                        id="state"
-                        placeholder="State"
-                        className="px-4 appearance-none outline-none placeholder:text-gray-400 placeholder:font-normal placeholder:font-Poppins w-full bg-transparent"
-                        value={userData.state}
-                        onChange={handleChange}
-                        required
-                      />
-                      <button
-                        tabIndex="-1"
-                        className="cursor-pointer outline-none focus:outline-none transition-all text-gray-300 hover:text-red-600"
-                      >
-                        <svg
-                          className="w-4 h-4 mx-2 fill-current"
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <line x1="18" y1="6" x2="6" y2="18"></line>
-                          <line x1="6" y1="6" x2="18" y2="18"></line>
-                        </svg>
-                      </button>
-                      <button
-                        tabIndex="-1"
-                        htmlFor="show_more"
-                        className="cursor-pointer outline-none focus:outline-none border-l border-gray-200 transition-all text-gray-300 hover:text-blue-600"
-                      >
-                        <svg
-                          className="w-4 h-4 mx-2 fill-current"
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <polyline points="18 15 12 9 6 15"></polyline>
-                        </svg>
-                      </button>
-                    </div>
+                    <input
+                      type="text"
+                      name="state"
+                      id="state"
+                      placeholder="State"
+                      className="transition-all outline-none flex items-center h-10 border mt-1 rounded-lg px-4 w-fullfont-Montserrat font-medium bg-[#D8D7D7] border-gray-200 placeholder:font-Montserrat placeholder-[#747373]"
+                      value={userData.state}
+                      onChange={handleChange}
+                      required
+                    />
                   </div>
 
                   <div className="md:col-span-1 mt-5">
                     <label
                       htmlFor="zipcode"
-                      className="font-medium font-Euclid text-black"
+                      className="font-Montserrat font-medium text-black"
                     >
                       Zipcode
                     </label>
@@ -373,47 +307,57 @@ export default function AdminProfile() {
                       type="text"
                       name="zip"
                       id="zipcode"
-                      className="transition-all flex items-center h-10 border mt-1 rounded px-4 w-full bg-gray-50 placeholder:text-gray-400 placeholder:font-normal placeholder:font-Poppins"
+                      className="transition-all outline-none flex items-center h-10 border mt-1 rounded-lg px-4 w-fullfont-Montserrat font-medium bg-[#D8D7D7] border-gray-200 placeholder:font-Montserrat placeholder-[#747373]"
                       placeholder="ZipCode"
                       value={userData.zip}
                       onChange={handleChange}
                       required
                     />
                   </div>
-                  
-                {/* Latitude */}
-                <div className="md:col-span-3">
-                  <label htmlFor="allowedLatitude" className="font-medium text-black">Allowed Latitude</label>
-                  <input
-                    type="text"
-                    name="allowedLatitude"
-                    id="allowedLatitude"
-                    value={userData.allowedLatitude}
-                    onChange={handleChange}
-                    placeholder="e.g. 37.7749"
-                    className="h-10 border mt-1 rounded px-4 w-full bg-gray-50"
-                    required
-                  />
-                </div>
 
-                {/* Longitude */}
-                <div className="md:col-span-2">
-                  <label htmlFor="allowedLongitude" className="font-medium text-black">Allowed Longitude</label>
-                  <input
-                    type="text"
-                    name="allowedLongitude"
-                    id="allowedLongitude"
-                    value={userData.allowedLongitude}
-                    onChange={handleChange}
-                    placeholder="e.g. -122.4194"
-                    className="h-10 border mt-1 rounded px-4 w-full bg-gray-50"
-                    required
-                  />
-                </div>
+                  {/* Latitude */}
+                  <div className="md:col-span-3">
+                    <label
+                      htmlFor="allowedLatitude"
+                      className="font-Montserrat font-medium text-black"
+                    >
+                      Allowed Latitude
+                    </label>
+                    <input
+                      type="text"
+                      name="allowedLatitude"
+                      id="allowedLatitude"
+                      value={userData.allowedLatitude}
+                      onChange={handleChange}
+                      placeholder="e.g. 37.7749"
+                      className="h-10 border mt-1 outline-none rounded-lg px-4 w-full font-Montserrat font-medium bg-[#D8D7D7] border-gray-200 placeholder:font-Montserrat placeholder-[#747373]"
+                      required
+                    />
+                  </div>
+
+                  {/* Longitude */}
+                  <div className="md:col-span-2">
+                    <label
+                      htmlFor="allowedLongitude"
+                      className="font-Montserrat font-medium text-black"
+                    >
+                      Allowed Longitude
+                    </label>
+                    <input
+                      type="text"
+                      name="allowedLongitude"
+                      id="allowedLongitude"
+                      value={userData.allowedLongitude}
+                      onChange={handleChange}
+                      placeholder="e.g. -122.4194"
+                      className="h-10 border mt-1 rounded-lg outline-none px-4 w-full font-Montserrat font-medium bg-[#D8D7D7] border-gray-200 placeholder:font-Montserrat placeholder-[#747373]"
+                      required
+                    />
+                  </div>
 
                   <div className="md:col-span-5 text-right">
                     <div className="inline-flex items-end mt-5">
-                      <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                      <button className="bg-black text-white font-Montserrat font-medium py-2 px-4 rounded">
                         Submit
                       </button>
                     </div>
